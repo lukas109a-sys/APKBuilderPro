@@ -17,19 +17,27 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build Project with Gradle
+    - name: Install Android SDK & Build Tools
+      uses: android-actions/setup-android@v3
+
+    - name: Setup Project Structure & Build
       run: |
         echo "include ':'" > settings.gradle
         echo "rootProject.name = 'APKBuilderPro'" >> settings.gradle
+        
         cat << 'EOF' > build.gradle.kts
         plugins {
             id("com.android.application") version "8.1.1" apply false
             id("org.jetbrains.kotlin.android") version "1.9.0" apply false
         }
         EOF
-        mkdir -p app/src/main
+
+        mkdir -p app/src/main/java/com/lucas/apkbuilder
+        
+        # Mover os ficheiros para a estrutura correta
+        mv *.kt app/src/main/java/com/lucas/apkbuilder/
         mv AndroidManifest.xml app/src/main/
-        mv *.kt app/src/main/
+
         cat << 'EOF' > app/build.gradle.kts
         plugins {
             id("com.android.application")
@@ -52,7 +60,10 @@ jobs:
             implementation("com.google.android.material:material:1.10.0")
         }
         EOF
-        ./gradlew assembleDebug --no-daemon
+
+        # Aceitar licenças do Android SDK e compilar usando gradle instalado no sistema
+        yes | sdkmanager --licenses || true
+        gradle assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
