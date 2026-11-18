@@ -19,8 +19,25 @@ jobs:
 
     - name: Build with Gradle
       run: |
-        echo "include ':'" > settings.gradle
-        echo "rootProject.name = 'APKBuilderPro'" >> settings.gradle
+        # Configurar repositórios globais para o Gradle encontrar os plugins do Android
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = 'APKBuilderPro'
+        include(':app')
+        EOF
         
         cat << 'EOF' > build.gradle.kts
         plugins {
@@ -56,8 +73,6 @@ jobs:
         }
         EOF
 
-        # O Gradle do Ubuntu descarrega automaticamente os SDKs necessários no primeiro build
-        export ANDROID_HOME=$HOME/android-sdk
         gradle wrapper --gradle-version 8.1.1
         ./gradlew assembleDebug --no-daemon
 
