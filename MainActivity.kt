@@ -24,8 +24,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Verifica permissões de armazenamento em runtime
         checkStoragePermissions()
 
         val scrollView = ScrollView(this).apply {
@@ -39,27 +37,26 @@ class MainActivity : AppCompatActivity() {
         }
 
         val titleText = TextView(this).apply {
-            text = "Gerador de APK com Permissões Totais"
+            text = "Gerador de APK Real"
             textSize = 20f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
 
         val subtitleText = TextView(this).apply {
-            text = "Cria um APK funcional com QUERY_ALL_PACKAGES, Webview e Acesso Total."
+            text = "Gera o APK e guarda-o diretamente na pasta Downloads."
             textSize = 13f
             setTextColor(Color.parseColor("#9CA3AF"))
             setPadding(0, 5, 0, 20)
         }
 
         statusText = TextView(this).apply {
-            text = "Pronto para gerar o teu APK..."
+            text = "Pronto para gerar..."
             textSize = 14f
             setTextColor(Color.parseColor("#34D399"))
             setPadding(0, 0, 0, 20)
         }
 
-        // Campo para o nome da App
         inputName = EditText(this).apply {
             hint = "Nome da App (ex: MinhaLauncher)"
             setHintTextColor(Color.parseColor("#6B7280"))
@@ -68,9 +65,8 @@ class MainActivity : AppCompatActivity() {
             setPadding(30, 30, 30, 30)
         }
 
-        // Campo para o Código HTML/JS ou Conteúdo
         inputCode = EditText(this).apply {
-            hint = "Insere aqui o teu código HTML/JS ou descrição..."
+            hint = "Cola aqui o código HTML da Launcher..."
             setHintTextColor(Color.parseColor("#6B7280"))
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.parseColor("#1F2430"))
@@ -79,13 +75,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         val generateButton = Button(this).apply {
-            text = "GERAR APK COM PERMISSÕES TOTAIS"
+            text = "GERAR E GUARDAR APK"
             setBackgroundColor(Color.parseColor("#4F46E5"))
             setTextColor(Color.WHITE)
             setPadding(0, 30, 0, 30)
-            setOnClickListener {
-                generateRealApp()
-            }
+            setOnClickListener { generateRealApkFile() }
         }
 
         val paramsMargin = LinearLayout.LayoutParams(
@@ -118,20 +112,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun generateRealApp() {
-        val appName = inputName.text.toString().ifEmpty { "AppGerada" }
-        val userContent = inputCode.text.toString().ifEmpty { "<h1>Olá Mundo - App com Permissões Totais</h1>" }
+    private fun generateRealApkFile() {
+        val appName = inputName.text.toString().trim().ifEmpty { "MinhaLauncher" }.replace(" ", "_")
+        val userContent = inputCode.text.toString()
 
-        statusText.text = "A empacotar $appName com permissões de sistema..."
+        statusText.text = "A compilar $appName..."
 
         try {
-            // Diretório de projeto local no telemóvel
             val projectDir = File(filesDir, appName).apply { mkdirs() }
-            
-            // Cria o ficheiro de conteúdo principal
             File(projectDir, "index.html").writeText(userContent)
 
-            // Cria o AndroidManifest.xml injetando explicitamente as permissões avançadas
             val manifestContent = """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.lucas.$appName">
@@ -139,7 +129,6 @@ class MainActivity : AppCompatActivity() {
                     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
                     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
                     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-                    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
                     <application android:label="$appName">
                         <activity android:name=".MainActivity" android:exported="true">
                             <intent-filter>
@@ -152,30 +141,31 @@ class MainActivity : AppCompatActivity() {
             """.trimIndent()
             File(projectDir, "AndroidManifest.xml").writeText(manifestContent)
 
-            // Diretório de saída na pasta Downloads pública para faculdade de acesso
+            val unsignedApk = File(filesDir, "${appName}_unsigned.apk")
+            
+            // Grava diretamente na pasta pública de Downloads do telemóvel
             val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (!downloadDir.exists()) downloadDir.mkdirs()
+            val signedApk = File(downloadDir, "$appName.apk")
 
-            val unsignedApk = File(filesDir, "${appName}_unsigned.apk")
-            val signedApk = File(downloadDir, "${appName}_Final.apk")
+            if (unsignedApk.exists()) unsignedApk.delete()
+            if (signedApk.exists()) signedApk.delete()
 
-            // Executa o Motor Nativo de Empacotamento
             val built = ApkBuilderEngine.buildUnsignedApk(projectDir, unsignedApk)
             
             if (built) {
-                // Assina digitalmente para o Android aceitar a instalação
                 val signed = ApkSigner.sign(unsignedApk, signedApk)
-                if (signed) {
-                    statusText.text = "Sucesso Total!\nAPK guardado em Downloads:\n${signedApk.absolutePath}"
-                    Toast.makeText(this, "APK Criado com Permissões Totais!", Toast.LENGTH_LONG).show()
+                if (signed && signedApk.exists()) {
+                    statusText.text = "SUCESSO! Ficheiro criado em:\n${signedApk.absolutePath}"
+                    Toast.makeText(this, "APK gerado em Downloads!", Toast.LENGTH_LONG).show()
                 } else {
-                    statusText.text = "Erro: Falha ao assinar digitalmente o APK."
+                    statusText.text = "Erro: Falha na assinatura digital."
                 }
             } else {
-                statusText.text = "Erro: Falha ao empacotar os ficheiros da app."
+                statusText.text = "Erro: Falha no empacotamento."
             }
         } catch (e: Exception) {
-            statusText.text = "Erro crítico: ${e.message}"
+            statusText.text = "Erro: ${e.message}"
             e.printStackTrace()
         }
     }
