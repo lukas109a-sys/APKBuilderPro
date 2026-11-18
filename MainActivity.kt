@@ -1,172 +1,94 @@
 package com.lucas.apkbuilder
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.Color
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Environment
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var statusText: TextView
-    private lateinit var inputName: EditText
-    private lateinit var inputCode: EditText
-
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkStoragePermissions()
 
-        val scrollView = ScrollView(this).apply {
-            setBackgroundColor(Color.parseColor("#12141C"))
-            isFillViewport = true
+        val webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            webViewClient = WebViewClient()
         }
 
-        val mainLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(40, 40, 40, 40)
-        }
+        // HTML incorporado da tua Launcher de TV Box Pro
+        val launcherHtml = """
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>TV Box Launcher Pro</title>
+                <style>
+                    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+                    body { background-color: #0b0f19; color: #ffffff; height: 100vh; display: flex; flex-direction: column; padding: 30px; overflow: hidden; }
+                    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+                    h1 { font-size: 28px; font-weight: 700; color: #f3f4f6; }
+                    .clock { font-size: 24px; font-weight: 500; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 8px 16px; border-radius: 12px; }
+                    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; flex-grow: 1; align-content: start; }
+                    .card { background: #171c28; border: 2px solid transparent; border-radius: 16px; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
+                    .card:hover, .card:focus { background: #1e2538; border-color: #4f46e5; transform: translateY(-4px); }
+                    .card .icon { font-size: 40px; margin-bottom: 12px; }
+                    .card span { font-size: 16px; font-weight: 600; color: #e5e7eb; }
+                    .status-bar { margin-top: 20px; background: #131822; padding: 12px 20px; border-radius: 10px; font-size: 14px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+                    .btn-clean { background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+                </style>
+            </head>
+            <body>
+                <header>
+                    <div>
+                        <h1>Google TV Launcher</h1>
+                        <p style="color: #9ca3af; font-size: 13px;">QUERY_ALL_PACKAGES & Sistema Ativos</p>
+                    </div>
+                    <div class="clock" id="clock">00:00</div>
+                </header>
+                <div class="grid">
+                    <div class="card" onclick="alert('A abrir YouTube TV')">
+                        <div class="icon">📺</div>
+                        <span>YouTube TV</span>
+                    </div>
+                    <div class="card" onclick="alert('A abrir Streaming')">
+                        <div class="icon">🎬</div>
+                        <span>Streaming</span>
+                    </div>
+                    <div class="card" onclick="alert('A abrir Gestor')">
+                        <div class="icon">📁</div>
+                        <span>Gestor de Ficheiros</span>
+                    </div>
+                    <div class="card" onclick="alert('A abrir Definições')">
+                        <div class="icon">⚙️</div>
+                        <span>Definições</span>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="ram-status">Memória RAM: Otimizada (Modo TV Box)</span>
+                    <button class="btn-clean" onclick="cleanRam()">Limpar RAM</button>
+                </div>
+                <script>
+                    function updateClock() {
+                        const now = new Date();
+                        document.getElementById('clock').innerText = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                    }
+                    setInterval(updateClock, 1000);
+                    updateClock();
+                    function cleanRam() {
+                        const status = document.getElementById('ram-status');
+                        status.innerText = "A limpar processos de fundo...";
+                        setTimeout(() => { status.innerText = "Memória limpa com sucesso!"; }, 1000);
+                    }
+                </script>
+            </body>
+            </html>
+        """.trimIndent()
 
-        val titleText = TextView(this).apply {
-            text = "Gerador de APK Real"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            setTypeface(null, android.graphics.Typeface.BOLD)
-        }
-
-        val subtitleText = TextView(this).apply {
-            text = "Gera o APK e guarda-o diretamente na pasta Downloads."
-            textSize = 13f
-            setTextColor(Color.parseColor("#9CA3AF"))
-            setPadding(0, 5, 0, 20)
-        }
-
-        statusText = TextView(this).apply {
-            text = "Pronto para gerar..."
-            textSize = 14f
-            setTextColor(Color.parseColor("#34D399"))
-            setPadding(0, 0, 0, 20)
-        }
-
-        inputName = EditText(this).apply {
-            hint = "Nome da App (ex: MinhaLauncher)"
-            setHintTextColor(Color.parseColor("#6B7280"))
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#1F2430"))
-            setPadding(30, 30, 30, 30)
-        }
-
-        inputCode = EditText(this).apply {
-            hint = "Cola aqui o código HTML da Launcher..."
-            setHintTextColor(Color.parseColor("#6B7280"))
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#1F2430"))
-            setPadding(30, 30, 30, 30)
-            minLines = 4
-        }
-
-        val generateButton = Button(this).apply {
-            text = "GERAR E GUARDAR APK"
-            setBackgroundColor(Color.parseColor("#4F46E5"))
-            setTextColor(Color.WHITE)
-            setPadding(0, 30, 0, 30)
-            setOnClickListener { generateRealApkFile() }
-        }
-
-        val paramsMargin = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            setMargins(0, 0, 0, 25)
-        }
-
-        mainLayout.addView(titleText)
-        mainLayout.addView(subtitleText)
-        mainLayout.addView(statusText)
-        mainLayout.addView(inputName.apply { layoutParams = paramsMargin })
-        mainLayout.addView(inputCode.apply { layoutParams = paramsMargin })
-        mainLayout.addView(generateButton.apply { layoutParams = paramsMargin })
-
-        scrollView.addView(mainLayout)
-        setContentView(scrollView)
-    }
-
-    private fun checkStoragePermissions() {
-        val write = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val read = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-        if (write != PackageManager.PERMISSION_GRANTED || read != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
-                100
-            )
-        }
-    }
-
-    private fun generateRealApkFile() {
-        val appName = inputName.text.toString().trim().ifEmpty { "MinhaLauncher" }.replace(" ", "_")
-        val userContent = inputCode.text.toString()
-
-        statusText.text = "A compilar $appName..."
-
-        try {
-            val projectDir = File(filesDir, appName).apply { mkdirs() }
-            File(projectDir, "index.html").writeText(userContent)
-
-            val manifestContent = """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    package="com.lucas.$appName">
-                    <uses-permission android:name="android.permission.INTERNET"/>
-                    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-                    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-                    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-                    <application android:label="$appName">
-                        <activity android:name=".MainActivity" android:exported="true">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN"/>
-                                <category android:name="android.intent.category.LAUNCHER"/>
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-            """.trimIndent()
-            File(projectDir, "AndroidManifest.xml").writeText(manifestContent)
-
-            val unsignedApk = File(filesDir, "${appName}_unsigned.apk")
-            
-            // Grava diretamente na pasta pública de Downloads do telemóvel
-            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadDir.exists()) downloadDir.mkdirs()
-            val signedApk = File(downloadDir, "$appName.apk")
-
-            if (unsignedApk.exists()) unsignedApk.delete()
-            if (signedApk.exists()) signedApk.delete()
-
-            val built = ApkBuilderEngine.buildUnsignedApk(projectDir, unsignedApk)
-            
-            if (built) {
-                val signed = ApkSigner.sign(unsignedApk, signedApk)
-                if (signed && signedApk.exists()) {
-                    statusText.text = "SUCESSO! Ficheiro criado em:\n${signedApk.absolutePath}"
-                    Toast.makeText(this, "APK gerado em Downloads!", Toast.LENGTH_LONG).show()
-                } else {
-                    statusText.text = "Erro: Falha na assinatura digital."
-                }
-            } else {
-                statusText.text = "Erro: Falha no empacotamento."
-            }
-        } catch (e: Exception) {
-            statusText.text = "Erro: ${e.message}"
-            e.printStackTrace()
-        }
+        webView.loadDataWithBaseURL(null, launcherHtml, "text/html", "UTF-8", null)
+        setContentView(webView)
     }
 }
