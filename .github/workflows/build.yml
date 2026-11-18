@@ -72,8 +72,8 @@ jobs:
         }
         EOF
 
-        # Descarregar e instalar o Gradle 8.5 diretamente para evitar conflitos da versão do sistema
-        wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
+        # Descarregar o Gradle 8.5 de forma silenciosa e rápida
+        wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
         unzip -q gradle-8.5-bin.zip
         export PATH=$PWD/gradle-8.5/bin:$PATH
 
