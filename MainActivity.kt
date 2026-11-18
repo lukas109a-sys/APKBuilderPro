@@ -16,9 +16,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,13 +32,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var spotlightTitle: TextView
     private lateinit var spotlightDesc: TextView
 
-    // Lançamentos com cartazes visuais alternados estilo Google TV
-    private val liveReleases = listOf(
-        Triple("🎬 [ PÔSTER: DEADPOOL & WOLVERINE ]", "🔥 ESTREIA CINEMA: DEADPOOL & WOLVERINE", "O multiverso da Marvel agita as salas de cinema com ação e comédia."),
-        Triple("🍿 [ PÔSTER: ROUND 6 - 2ª TEMP ]", "🍿 SÉRIE EM DESTAQUE: ROUND 6", "O jogo mortal regressa com novos desafios e reviravoltas intensas."),
-        Triple("🎥 [ PÔSTER: DUNE (PARTE 2) ]", "🎬 BLOCKBUSTER: DUNE (PARTE 2)", "A jornada épica no deserto continua nas plataformas digitais."),
-        Triple("⚡ [ PÔSTER: A FREIRA 2 ]", "⚡ TERROR RECENTE: A FREIRA 2", "O mal retorna aos ecrãs com suspense e atmosfera aterrorizante."),
-        Triple("📺 [ PÔSTER: THE LAST OF US ]", "📺 SÉRIE STREAMING: THE LAST OF US", "Aclamada adaptação dramática de sobrevivência num mundo pós-apocalíptico.")
+    // Lista temporária de segurança caso a rede demore
+    private var dynamicReleases = mutableListOf(
+        Triple("🎬 [ GOOGLE TV: SINCRONIZANDO WEB... ]", "RED TV CLOUD", "A ligar aos servidores de cinema e streaming em tempo real...")
     )
     
     private var currentIndex = 0
@@ -121,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel com Cartaz Dinâmico em Rotação
+        // Centro: Painel Google TV com Lançamentos Atuais da Internet
         val centerCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
@@ -137,8 +138,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightPoster = TextView(this).apply {
-            text = liveReleases[0].first
-            textSize = 14f
+            text = dynamicReleases[0].first
+            textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
@@ -146,13 +147,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightTitle = TextView(this).apply {
-            text = liveReleases[0].second
+            text = dynamicReleases[0].second
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
         spotlightDesc = TextView(this).apply {
-            text = liveReleases[0].third
+            text = dynamicReleases[0].third
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
@@ -162,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         centerCard.addView(spotlightDesc)
         middleBody.addView(centerCard)
 
-        // Coluna Direita
+        // Coluna Direita (Loja TV -> Play Store)
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -208,20 +209,80 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        startPosterRotator()
+        
+        // Puxar lançamentos reais da internet em background
+        fetchLiveReleasesFromWeb()
+    }
+
+    private fun fetchLiveReleasesFromWeb() {
+        thread {
+            try {
+                val url = URL("https://api.themoviedb.org/3/movie/now_playing?api_key=c22634e304b4f535352c8b74542d997d&language=pt-PT")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+
+                if (connection.responseCode == 200) {
+                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                    val response = StringBuilder()
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        response.append(line)
+                    }
+                    reader.close()
+
+                    // Processamento simples do JSON nativo sem bibliotecas externas
+                    val jsonStr = response.toString()
+                    val resultsMarker = "\"results\":"
+                    val resultsIndex = jsonStr.indexOf(resultsMarker)
+                    if (resultsIndex != -1) {
+                        val newReleases = mutableListOf<Triple<String, String, String>>()
+                        // Extração dinâmica de títulos e sinopses do feed oficial de cinema
+                        val rawTitles = jsonStr.split("\"title\":\"")
+                        for (i in 1 until minOf(rawTitles.size, 6)) {
+                            val titlePart = rawTitles[i].split("\"")[0]
+                            val overviewPart = if (rawTitles[i].contains("\"overview\":\"")) {
+                                val ov = rawTitles[i].split("\"overview\":\"")[1].split("\"")[0]
+                                if (ov.length > 85) ov.substring(0, 85) + "..." else ov
+                            } else {
+                                "Estreia em destaque nos cinemas e plataformas digitais."
+                            }
+                            newReleases.add(
+                                Triple(
+                                    "🎬 [ EM CARTAZ: $titlePart ]",
+                                    "🔥 ESTREIA OFICIAL: $titlePart",
+                                    overviewPart
+                                )
+                            )
+                        }
+
+                        if (newReleases.isNotEmpty()) {
+                            handler.post {
+                                dynamicReleases = newReleases
+                                startPosterRotator()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Mantém rotação local se falhar a rede
+            }
+        }
     }
 
     private fun startPosterRotator() {
+        if (dynamicReleases.isEmpty()) return
         rotatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % liveReleases.size
-                spotlightPoster.text = liveReleases[currentIndex].first
-                spotlightTitle.text = liveReleases[currentIndex].second
-                spotlightDesc.text = liveReleases[currentIndex].third
-                handler.postDelayed(this, 4000) // Troca o cartaz e os detalhes a cada 4 segundos
+                currentIndex = (currentIndex + 1) % dynamicReleases.size
+                spotlightPoster.text = dynamicReleases[currentIndex].first
+                spotlightTitle.text = dynamicReleases[currentIndex].second
+                spotlightDesc.text = dynamicReleases[currentIndex].third
+                handler.postDelayed(this, 5000) // Roda a cada 5 segundos automaticamente
             }
         }
-        handler.postDelayed(rotatorRunnable, 4000)
+        handler.post(rotatorRunnable)
     }
 
     override fun onDestroy() {
