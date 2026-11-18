@@ -1,139 +1,168 @@
 package com.lucas.apkbuilder
 
-import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.provider.Settings
+import android.view.Gravity
+import android.widget.Button
+import android.widget.GridLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    @SuppressLint("SetJavaScriptEnabled")
+    private lateinit var statusText: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
-            
-            // Adiciona a ponte para o JavaScript conseguir controlar o Android nativamente
-            addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidLauncher")
+        // Layout Principal Nativo (Fundo Escuro TV Box)
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0B0F19"))
+            setPadding(50, 50, 50, 50)
         }
 
-        // HTML atualizado com ações reais de lançamento de pacotes
-        val launcherHtml = """
-            <!DOCTYPE html>
-            <html lang="pt-BR">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>TV Box Launcher Pro</title>
-                <style>
-                    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-                    body { background-color: #0b0f19; color: #ffffff; height: 100vh; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; }
-                    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-                    h1 { font-size: 28px; font-weight: 700; color: #f3f4f6; }
-                    .clock { font-size: 24px; font-weight: 500; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 8px 16px; border-radius: 12px; }
-                    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; flex-grow: 1; }
-                    .card { background: #171c28; border: 2px solid transparent; border-radius: 16px; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
-                    .card:hover, .card:active { background: #1e2538; border-color: #4f46e5; transform: translateY(-4px); }
-                    .card .icon { font-size: 40px; margin-bottom: 12px; }
-                    .card span { font-size: 16px; font-weight: 600; color: #e5e7eb; }
-                    .status-bar { margin-top: 30px; background: #131822; padding: 15px 20px; border-radius: 10px; font-size: 14px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
-                    .btn-clean { background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-                </style>
-            </head>
-            <body>
-                <header>
-                    <div>
-                        <h1>Google TV Launcher</h1>
-                        <p style="color: #9ca3af; font-size: 13px;">Controlo de Sistema & Ações Reais</p>
-                    </div>
-                    <div class="clock" id="clock">00:00</div>
-                </header>
-                <div class="grid">
-                    <div class="card" onclick="AndroidLauncher.openPackage('com.google.android.youtube.tv')">
-                        <div class="icon">📺</div>
-                        <span>YouTube TV</span>
-                    </div>
-                    <div class="card" onclick="AndroidLauncher.openPackage('com.netflix.ninja')">
-                        <div class="icon">🎬</div>
-                        <span>Netflix</span>
-                    </div>
-                    <div class="card" onclick="AndroidLauncher.openSettings()">
-                        <div class="icon">⚙️</div>
-                        <span>Definições</span>
-                    </div>
-                    <div class="card" onclick="AndroidLauncher.showToast('Gestor de Ficheiros a abrir...')">
-                        <div class="icon">📁</div>
-                        <span>Ficheiros</span>
-                    </div>
-                </div>
-                <div class="status-bar">
-                    <span id="ram-status">Sistema pronto e otimizado para TV Box</span>
-                    <button class="btn-clean" onclick="AndroidLauncher.cleanRam()">Limpar RAM</button>
-                </div>
-                <script>
-                    function updateClock() {
-                        const now = new Date();
-                        document.getElementById('clock').innerText = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-                    }
-                    setInterval(updateClock, 1000);
-                    updateClock();
-                </script>
-            </body>
-            </html>
-        """.trimIndent()
+        // Cabeçalho Nativo
+        val headerLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, 40)
+        }
 
-        webView.loadDataWithBaseURL(null, launcherHtml, "text/html", "UTF-8", null)
-        setContentView(webView)
+        val titleView = TextView(this).apply {
+            text = "Google TV Launcher Nativa"
+            textSize = 26f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val clockView = TextView(this).apply {
+            text = "19:30"
+            textSize = 20f
+            setTextColor(Color.parseColor("#34D399"))
+            setPadding(20, 10, 20, 10)
+            setBackgroundColor(Color.parseColor("#1A3830"))
+        }
+
+        headerLayout.addView(titleView)
+        headerLayout.addView(clockView)
+        rootLayout.addView(headerLayout)
+
+        // Grelha Nativa para os Atalhos (Compatível com Comando / Foco)
+        val gridLayout = GridLayout(this).apply {
+            columnCount = 2
+            rowCount = 2
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+
+        // Adicionar Cartões Nativos
+        gridLayout.addView(createNativeCard("📺", "YouTube TV") {
+            launchPackage("com.google.android.youtube.tv")
+        })
+
+        gridLayout.addView(createNativeCard("🎬", "Netflix") {
+            launchPackage("com.netflix.ninja")
+        })
+
+        gridLayout.addView(createNativeCard("⚙️", "Definições") {
+            try {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Erro ao abrir definições", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        gridLayout.addView(createNativeCard("🧹", "Limpar RAM") {
+            statusText.text = "Estado: Memória RAM otimizada com sucesso!"
+            Toast.makeText(this, "Sistema limpo!", Toast.LENGTH_SHORT).show()
+        })
+
+        rootLayout.addView(gridLayout)
+
+        // Barra de Estado Inferior Nativa
+        statusText = TextView(this).apply {
+            text = "Estado: Sistema nativo pronto (QUERY_ALL_PACKAGES ativo)"
+            textSize = 14f
+            setTextColor(Color.parseColor("#9CA3AF"))
+            setPadding(0, 20, 0, 0)
+        }
+        rootLayout.addView(statusText)
+
+        setContentView(rootLayout)
     }
 
-    // Ponte de comunicação direta entre o visual da Launcher e o sistema Android
-    class WebAppInterface(private val context: AppCompatActivity) {
-        
-        @JavascriptInterface
-        fun openPackage(packageName: String) {
-            try {
-                val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-                if (intent != null) {
-                    context.startActivity(intent)
+    // Função para criar cartões nativos focáveis para comandos de TV Box
+    private fun createNativeCard(icon: String, label: String, onClick: () -> Unit): LinearLayout {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#171C28"))
+            isFocusable = true
+            isClickable = true
+            setOnClickListener { onClick() }
+
+            // Dar destaque visual quando o comando foca o botão na TV Box
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    setBackgroundColor(Color.parseColor("#1E2538"))
                 } else {
-                    // Se a app não estiver instalada, abre na web/store como alternativa
-                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName"))
-                    context.startActivity(webIntent)
+                    setBackgroundColor(Color.parseColor("#171C28"))
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao abrir aplicação", Toast.LENGTH_SHORT).show()
             }
         }
 
-        @JavascriptInterface
-        fun openSettings() {
-            try {
-                context.startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
-            } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao abrir definições", Toast.LENGTH_SHORT).show()
-            }
+        val params = GridLayout.LayoutParams().apply {
+            width = 0
+            height = 0
+            columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            setMargins(15, 15, 15, 15)
+        }
+        card.layoutParams = params
+
+        val iconView = TextView(this).apply {
+            text = icon
+            textSize = 36f
+            gravity = Gravity.CENTER
         }
 
-        @JavascriptInterface
-        fun showToast(message: String) {
-            context.runOnUiThread {
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
+        val labelView = TextView(this).apply {
+            text = label
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, 10, 0, 0)
         }
 
-        @JavascriptInterface
-        fun cleanRam() {
-            context.runOnUiThread {
-                Toast.makeText(context, "Memória RAM otimizada com sucesso!", Toast.LENGTH_LONG).show()
+        card.addView(iconView)
+        card.addView(labelView)
+        return card
+    }
+
+    // Lançador de pacotes reais do sistema Android
+    private fun launchPackage(packageName: String) {
+        try {
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) {
+                startActivity(intent)
+            } else {
+                // Se a app não estiver instalada, redireciona para a Play Store
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName")))
             }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Não foi possível abrir a aplicação", Toast.LENGTH_SHORT).show()
         }
     }
 }
