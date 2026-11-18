@@ -19,7 +19,6 @@ jobs:
 
     - name: Build with Gradle
       run: |
-        # Configurar repositórios globais para o Gradle encontrar os plugins do Android
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -41,8 +40,8 @@ jobs:
         
         cat << 'EOF' > build.gradle.kts
         plugins {
-            id("com.android.application") version "8.1.1" apply false
-            id("org.jetbrains.kotlin.android") version "1.9.0" apply false
+            id("com.android.application") version "8.2.0" apply false
+            id("org.jetbrains.kotlin.android") version "1.9.20" apply false
         }
         EOF
 
@@ -73,7 +72,8 @@ jobs:
         }
         EOF
 
-        gradle wrapper --gradle-version 8.1.1
+        # Fixar a versão exata do Gradle para evitar conflitos da v9
+        gradle wrapper --gradle-version 8.5
         ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
