@@ -78,7 +78,6 @@ class MainActivity : AppCompatActivity() {
         val built = ApkBuilderEngine.buildUnsignedApk(sampleProject, unsignedApk)
         
         if (built) {
-            // Chamada direta e correta ao ApkSigner
             val signed = ApkSigner.sign(unsignedApk, signedApk)
             if (signed) {
                 statusText.text = "Sucesso! APK guardado em Downloads:\n${signedApk.absolutePath}"
