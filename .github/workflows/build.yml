@@ -45,6 +45,12 @@ jobs:
         }
         EOF
 
+        # Criar o gradle.properties necessário para o AndroidX
+        cat << 'EOF' > gradle.properties
+        android.useAndroidX=true
+        android.enableJetifier=true
+        EOF
+
         mkdir -p app/src/main/java/com/lucas/apkbuilder
         mv *.kt app/src/main/java/com/lucas/apkbuilder/
         mv AndroidManifest.xml app/src/main/
@@ -72,7 +78,6 @@ jobs:
         }
         EOF
 
-        # Descarregar o Gradle 8.5 de forma silenciosa e rápida
         wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
         unzip -q gradle-8.5-bin.zip
         export PATH=$PWD/gradle-8.5/bin:$PATH
