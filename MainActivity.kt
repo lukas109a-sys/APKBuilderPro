@@ -20,7 +20,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Layout simples criado em código para evitar ficheiros XML complexos
         val layout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(50, 50, 50, 50)
@@ -69,7 +68,6 @@ class MainActivity : AppCompatActivity() {
     private fun startBuildProcess() {
         statusText.text = "A criar APK..."
         
-        // Diretório de exemplo do projeto a ser compilado
         val sampleProject = File(filesDir, "sample_project").apply { mkdirs() }
         File(sampleProject, "config.txt").writeText("App Gerada via APKBuilderPro")
 
@@ -77,15 +75,14 @@ class MainActivity : AppCompatActivity() {
         val unsignedApk = File(outputDir, "unsigned_app.apk")
         val signedApk = File(outputDir, "APKBuilderPro_Final.apk")
 
-        // 1. Empacotar com o motor
         val built = ApkBuilderEngine.buildUnsignedApk(sampleProject, unsignedApk)
         
         if (built) {
-            // 2. Assinar automaticamente com o signer
+            // Chamada direta e correta ao ApkSigner
             val signed = ApkSigner.sign(unsignedApk, signedApk)
             if (signed) {
                 statusText.text = "Sucesso! APK guardado em Downloads:\n${signedApk.absolutePath}"
-                Toast.of(this, "APK Criado e Assinado com Sucesso!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "APK Criado e Assinado com Sucesso!", Toast.LENGTH_LONG).show()
             } else {
                 statusText.text = "Erro ao assinar o APK."
             }
