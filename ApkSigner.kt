@@ -2,29 +2,26 @@ package com.lucas.apkbuilder
 
 import java.io.File
 import java.io.FileOutputStream
-import java.security.KeyPairGenerator
-import java.security.MessageDigest
-import java.security.Signature
-import java.util.Base64
 import java.util.jar.Attributes
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
+import java.security.MessageDigest
+import java.util.Base64
 
 object ApkSigner {
-    fun signApk(unsignedApk: File, signedApk: File): Boolean {
+    fun sign(unsignedApk: File, signedApk: File): Boolean {
         return try {
             val jarFile = JarFile(unsignedApk)
             val manifest = Manifest()
             val mainAttrs = manifest.mainAttributes
-            mainAttrs[Attributes.Name.MANIFEST_VERSION] = "1.0"
+            mainAttrs.putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0")
             mainAttrs.putValue("Created-By", "APKBuilderPro")
 
             val sha256 = MessageDigest.getInstance("SHA-256")
             val entries = jarFile.entries()
 
-            // Gera o hash SHA-256 de cada arquivo interno do APK
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
                 if (!entry.isDirectory && !entry.name.startsWith("META-INF/")) {
@@ -36,7 +33,6 @@ object ApkSigner {
                 }
             }
 
-            // Empacota o APK assinado pronto para instalação
             JarOutputStream(FileOutputStream(signedApk), manifest).use { jos ->
                 val copyEntries = jarFile.entries()
                 while (copyEntries.hasMoreElements()) {
