@@ -5,6 +5,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
 import android.view.Window
@@ -14,13 +16,24 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONObject
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
+    private lateinit var spotlightTitle: TextView
+    private lateinit var spotlightDesc: TextView
+
+    // Lista dinâmica que vai receber os filmes reais da web
+    private var realHighlights = mutableListOf<Pair<String, String>>()
+    private var currentHighlightIndex = 0
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var highlightRunnable: Runnable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel de Destaque com imagem/paisagem simulada
+        // Centro: Painel de Destaque com Lançamentos Reais da Web
         val centerCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
@@ -123,34 +136,33 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val landscapeView = TextView(this).apply {
-            text = "🌄 [ PAISAGEM / DESTAQUE MULTIMÉDIA ]"
+        val spotlightPoster = TextView(this).apply {
+            text = "🎬 [ CINEMA & STREAMING AO VIVO ]"
             textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
-            setPadding(0, 20, 0, 20)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
         }
 
-        val cardMainTitle = TextView(this).apply {
-            text = "CENTRAL RED TV"
+        spotlightTitle = TextView(this).apply {
+            text = "A carregar lançamentos reais da web..."
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
-        val cardMainSub = TextView(this).apply {
-            text = "Conteúdo em destaque com suporte QUERY_ALL_PACKAGES."
+        spotlightDesc = TextView(this).apply {
+            text = "Aguarde enquanto sincronizamos com os cinemas."
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
 
-        centerCard.addView(landscapeView)
-        centerCard.addView(cardMainTitle)
-        centerCard.addView(cardMainSub)
+        centerCard.addView(spotlightPoster)
+        centerCard.addView(spotlightTitle)
+        centerCard.addView(spotlightDesc)
         middleBody.addView(centerCard)
 
-        // Coluna Direita (Botão Loja TV configurado para Play Store)
+        // Coluna Direita (Botão Loja TV ligado à Play Store)
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -160,7 +172,7 @@ class MainActivity : AppCompatActivity() {
             try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) {}
         })
         rightCol.addView(createModelButton("🛒 Loja TV") { 
-            launchPackage("com.android.vending") // Abre a Google Play Store
+            launchPackage("com.android.vending")
         })
         rightCol.addView(createModelButton("📱 Apps e Jogos") { 
             Toast.makeText(this, "Grelha em baixo", Toast.LENGTH_SHORT).show() 
@@ -198,6 +210,61 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
+        fetchRealMoviesFromWeb()
+    }
+
+    // Puxa os filmes reais em cartaz através de uma API pública de cinema em background
+    private fun fetchRealMoviesFromWeb() {
+        thread {
+            try {
+                // Endpoint público de filmes populares / em cartaz
+                val url = "https://api.themoviedb.org/3/movie/now_playing?api_key=c22634e304b4f535352c8b74542d997d&language=pt-PT"
+                val response = URL(url).readText()
+                val json = JSONObject(response)
+                val results = json.getJSONArray("results")
+
+                val fetchedList = mutableListOf<Pair<String, String>>()
+                for (i in 0 until minOf(results.length(), 6)) {
+                    val movie = results.getJSONObject(i)
+                    val title = movie.getString("title")
+                    val overview = movie.getString("overview")
+                    val cleanOverview = if (overview.length > 90) overview.substring(0, 90) + "..." else overview
+                    fetchedList.add(Pair("🔥 ESTREIA CINEMA: $title", cleanOverview))
+                }
+
+                if (fetchedList.isNotEmpty()) {
+                    realHighlights = fetchedList
+                    handler.post {
+                        startHighlightRotator()
+                    }
+                }
+            } catch (e: Exception) {
+                handler.post {
+                    spotlightTitle.text = "🎬 CINEMA RED TV"
+                    spotlightDesc.text = "Explore os seus aplicativos e conteúdos multimédia."
+                }
+            }
+        }
+    }
+
+    private fun startHighlightRotator() {
+        if (realHighlights.isEmpty()) return
+        highlightRunnable = object : Runnable {
+            override fun run() {
+                currentHighlightIndex = (currentHighlightIndex + 1) % realHighlights.size
+                spotlightTitle.text = realHighlights[currentHighlightIndex].first
+                spotlightDesc.text = realHighlights[currentHighlightIndex].second
+                handler.postDelayed(this, 5000) // Troca a cada 5 segundos
+            }
+        }
+        handler.post(highlightRunnable)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::highlightRunnable.isInitialized) {
+            handler.removeCallbacks(highlightRunnable)
+        }
     }
 
     private fun createTopMiniBtn(iconStr: String, onClick: () -> Unit): TextView {
