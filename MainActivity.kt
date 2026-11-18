@@ -22,14 +22,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Fundo Preto Total (Estilo OLED / TV Box)
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#050505"))
             setPadding(40, 40, 40, 40)
         }
 
-        // Cabeçalho com Vermelho Neon
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -39,12 +37,11 @@ class MainActivity : AppCompatActivity() {
         val titleView = TextView(this).apply {
             text = "RED TV LAUNCHER"
             textSize = 24f
-            setTextColor(Color.parseColor("#FF1E56")) // Vermelho Neon
+            setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        // Botões de Acesso Rápido no Topo (Definições e Wi-Fi)
         val wifiBtn = createTopIconButton("📶") {
             try {
                 startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
@@ -66,7 +63,6 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(settingsBtn)
         rootLayout.addView(headerLayout)
 
-        // Grelha de Atalhos Principais (Vermelho Neon & Preto)
         val gridLayout = GridLayout(this).apply {
             columnCount = 3
             rowCount = 1
@@ -92,17 +88,15 @@ class MainActivity : AppCompatActivity() {
 
         rootLayout.addView(gridLayout)
 
-        // Título da Lista de Apps
         val sectionTitle = TextView(this).apply {
             text = "APLICAÇÕES INSTALADAS"
             textSize = 14f
-            setTextColor(Color.parseColor("#FF1E56")) // Vermelho Neon
+            setTextColor(Color.parseColor("#FF1E56"))
             setPadding(0, 30, 0, 15)
             typeface = Typeface.DEFAULT_BOLD
         }
         rootLayout.addView(sectionTitle)
 
-        // Lista de Apps Instaladas
         appContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -113,7 +107,6 @@ class MainActivity : AppCompatActivity() {
         }
         rootLayout.addView(scroll)
 
-        // Barra de Estado
         statusText = TextView(this).apply {
             text = "Estado: Pronto a utilizar."
             textSize = 12f
@@ -126,11 +119,10 @@ class MainActivity : AppCompatActivity() {
         loadInstalledApps()
     }
 
-    // Estilo de Cartão Neon (Fundo Preto com Contorno Vermelho)
     private fun createNeonCard(icon: String, label: String, onClick: () -> Unit): LinearLayout {
         val cardBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#101010")) // Preto carvão
-            setStroke(2, Color.parseColor("#FF1E56")) // Linha Vermelho Neon
+            setColor(Color.parseColor("#101010"))
+            setStroke(2, Color.parseColor("#FF1E56"))
             cornerRadius = 14f
         }
 
@@ -169,14 +161,13 @@ class MainActivity : AppCompatActivity() {
             background = bg
             setPadding(20, 12, 20, 12)
             setOnClickListener { onClick() }
-            setMargins(10, 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(10, 0, 0, 0)
+            }
         }
-    }
-
-    private fun setMargins(left: Int, top: Int, right: Int, bottom: Int) {
-        val p = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        p.setMargins(left, top, right, bottom)
-        layoutParams = p
     }
 
     private fun loadInstalledApps() {
