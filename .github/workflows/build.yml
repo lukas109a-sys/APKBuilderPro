@@ -45,13 +45,51 @@ jobs:
         }
         EOF
 
-        # Criar o gradle.properties necessário para o AndroidX
         cat << 'EOF' > gradle.properties
         android.useAndroidX=true
         android.enableJetifier=true
         EOF
 
         mkdir -p app/src/main/java/com/lucas/apkbuilder
+        mkdir -p app/src/main/res/values
+
+        # Criar um values/strings.xml básico para satisfazer os recursos do Android
+        cat << 'EOF' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">APKBuilderPro</string>
+        </resources>
+        EOF
+
+        # Corrigir o AndroidManifest.xml removendo as referências a ícones inexistentes e o atributo package antigo
+        cat << 'EOF' > AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+            <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+
+            <application
+                android:allowBackup="true"
+                android:label="APKBuilderPro"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+                
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
         mv *.kt app/src/main/java/com/lucas/apkbuilder/
         mv AndroidManifest.xml app/src/main/
 
