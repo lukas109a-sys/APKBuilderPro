@@ -16,29 +16,33 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import org.json.JSONObject
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
+    private lateinit var spotlightPoster: TextView
     private lateinit var spotlightTitle: TextView
     private lateinit var spotlightDesc: TextView
 
-    // Lista dinâmica que vai receber os filmes reais da web
-    private var realHighlights = mutableListOf<Pair<String, String>>()
-    private var currentHighlightIndex = 0
+    // Lançamentos com cartazes visuais alternados estilo Google TV
+    private val liveReleases = listOf(
+        Triple("🎬 [ PÔSTER: DEADPOOL & WOLVERINE ]", "🔥 ESTREIA CINEMA: DEADPOOL & WOLVERINE", "O multiverso da Marvel agita as salas de cinema com ação e comédia."),
+        Triple("🍿 [ PÔSTER: ROUND 6 - 2ª TEMP ]", "🍿 SÉRIE EM DESTAQUE: ROUND 6", "O jogo mortal regressa com novos desafios e reviravoltas intensas."),
+        Triple("🎥 [ PÔSTER: DUNE (PARTE 2) ]", "🎬 BLOCKBUSTER: DUNE (PARTE 2)", "A jornada épica no deserto continua nas plataformas digitais."),
+        Triple("⚡ [ PÔSTER: A FREIRA 2 ]", "⚡ TERROR RECENTE: A FREIRA 2", "O mal retorna aos ecrãs com suspense e atmosfera aterrorizante."),
+        Triple("📺 [ PÔSTER: THE LAST OF US ]", "📺 SÉRIE STREAMING: THE LAST OF US", "Aclamada adaptação dramática de sobrevivência num mundo pós-apocalíptico.")
+    )
+    
+    private var currentIndex = 0
     private val handler = Handler(Looper.getMainLooper())
-    private lateinit var highlightRunnable: Runnable
+    private lateinit var rotatorRunnable: Runnable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ecrã Inteiro Absoluto (Sem barra de título)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -52,9 +56,7 @@ class MainActivity : AppCompatActivity() {
             setPadding(24, 12, 24, 12)
         }
 
-        // ==========================================
-        // CABEÇALHO
-        // ==========================================
+        // Cabeçalho
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -95,9 +97,7 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(iconsHeaderLayout)
         rootLayout.addView(headerLayout)
 
-        // ==========================================
-        // CORPO CENTRAL (3 Colunas)
-        // ==========================================
+        // Corpo Central
         val middleBody = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel de Destaque com Lançamentos Reais da Web
+        // Centro: Painel com Cartaz Dinâmico em Rotação
         val centerCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
@@ -136,9 +136,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val spotlightPoster = TextView(this).apply {
-            text = "🎬 [ CINEMA & STREAMING AO VIVO ]"
-            textSize = 13f
+        spotlightPoster = TextView(this).apply {
+            text = liveReleases[0].first
+            textSize = 14f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
@@ -146,13 +146,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightTitle = TextView(this).apply {
-            text = "A carregar lançamentos reais da web..."
+            text = liveReleases[0].second
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
         spotlightDesc = TextView(this).apply {
-            text = "Aguarde enquanto sincronizamos com os cinemas."
+            text = liveReleases[0].third
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
         centerCard.addView(spotlightDesc)
         middleBody.addView(centerCard)
 
-        // Coluna Direita (Botão Loja TV ligado à Play Store)
+        // Coluna Direita
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -181,9 +181,7 @@ class MainActivity : AppCompatActivity() {
 
         rootLayout.addView(middleBody)
 
-        // ==========================================
-        // PARTE INFERIOR: "Mes apps"
-        // ==========================================
+        // Parte Inferior
         val sectionTitle = TextView(this).apply {
             text = "Mes apps"
             textSize = 11f
@@ -210,60 +208,26 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        fetchRealMoviesFromWeb()
+        startPosterRotator()
     }
 
-    // Puxa os filmes reais em cartaz através de uma API pública de cinema em background
-    private fun fetchRealMoviesFromWeb() {
-        thread {
-            try {
-                // Endpoint público de filmes populares / em cartaz
-                val url = "https://api.themoviedb.org/3/movie/now_playing?api_key=c22634e304b4f535352c8b74542d997d&language=pt-PT"
-                val response = URL(url).readText()
-                val json = JSONObject(response)
-                val results = json.getJSONArray("results")
-
-                val fetchedList = mutableListOf<Pair<String, String>>()
-                for (i in 0 until minOf(results.length(), 6)) {
-                    val movie = results.getJSONObject(i)
-                    val title = movie.getString("title")
-                    val overview = movie.getString("overview")
-                    val cleanOverview = if (overview.length > 90) overview.substring(0, 90) + "..." else overview
-                    fetchedList.add(Pair("🔥 ESTREIA CINEMA: $title", cleanOverview))
-                }
-
-                if (fetchedList.isNotEmpty()) {
-                    realHighlights = fetchedList
-                    handler.post {
-                        startHighlightRotator()
-                    }
-                }
-            } catch (e: Exception) {
-                handler.post {
-                    spotlightTitle.text = "🎬 CINEMA RED TV"
-                    spotlightDesc.text = "Explore os seus aplicativos e conteúdos multimédia."
-                }
-            }
-        }
-    }
-
-    private fun startHighlightRotator() {
-        if (realHighlights.isEmpty()) return
-        highlightRunnable = object : Runnable {
+    private fun startPosterRotator() {
+        rotatorRunnable = object : Runnable {
             override fun run() {
-                currentHighlightIndex = (currentHighlightIndex + 1) % realHighlights.size
-                spotlightTitle.text = realHighlights[currentHighlightIndex].first
-                spotlightDesc.text = realHighlights[currentHighlightIndex].second
-                handler.postDelayed(this, 5000) // Troca a cada 5 segundos
+                currentIndex = (currentIndex + 1) % liveReleases.size
+                spotlightPoster.text = liveReleases[currentIndex].first
+                spotlightTitle.text = liveReleases[currentIndex].second
+                spotlightDesc.text = liveReleases[currentIndex].third
+                handler.postDelayed(this, 4000) // Troca o cartaz e os detalhes a cada 4 segundos
             }
         }
-        handler.post(highlightRunnable)
+        handler.postDelayed(rotatorRunnable, 4000)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::highlightRunnable.isInitialized) {
-            handler.removeCallbacks(highlightRunnable)
+        if (::rotatorRunnable.isInitialized) {
+            handler.removeCallbacks(rotatorRunnable)
         }
     }
 
