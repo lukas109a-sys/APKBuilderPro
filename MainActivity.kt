@@ -44,14 +44,12 @@ class MainActivity : AppCompatActivity() {
         statusText.text = "A criar APK de teste..."
         
         try {
-            // Cria um projeto de teste na pasta interna da app (sem erros de permissão)
             val sampleProject = File(filesDir, "sample_project").apply { mkdirs() }
             File(sampleProject, "config.txt").writeText("App Gerada via APKBuilderPro")
 
             val unsignedApk = File(filesDir, "unsigned_app.apk")
             val signedApk = File(filesDir, "APKBuilderPro_Final.apk")
 
-            // Limpa APKs anteriores se existirem
             if (unsignedApk.exists()) unsignedApk.delete()
             if (signedApk.exists()) signedApk.delete()
 
@@ -61,7 +59,6 @@ class MainActivity : AppCompatActivity() {
                 val signed = ApkSigner.sign(unsignedApk, signedApk)
                 if (signed) {
                     statusText.text = "Sucesso absoluto!\nAPK guardado em:\n${signedApk.absolutePath}"
-                    Toast.istoricToast("APK Criado e Assinado com Sucesso!", Toast.LENGTH_LONG)
                     Toast.makeText(this, "APK Criado e Assinado com Sucesso!", Toast.LENGTH_LONG).show()
                 } else {
                     statusText.text = "Erro: Falha ao assinar o APK."
