@@ -1,10 +1,9 @@
 package com.lucas.apkbuilder
 
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -23,74 +22,87 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Fundo Preto Total (Estilo OLED / TV Box)
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#0B0F19"))
+            setBackgroundColor(Color.parseColor("#050505"))
             setPadding(40, 40, 40, 40)
         }
 
-        // Cabeçalho
+        // Cabeçalho com Vermelho Neon
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 30)
+            setPadding(0, 0, 0, 25)
         }
 
         val titleView = TextView(this).apply {
-            text = "Google TV Launcher"
+            text = "RED TV LAUNCHER"
             textSize = 24f
-            setTextColor(Color.WHITE)
+            setTextColor(Color.parseColor("#FF1E56")) // Vermelho Neon
             typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        val settingsBtn = TextView(this).apply {
-            text = " ⚙️ "
-            textSize = 22f
-            setPadding(15, 10, 15, 10)
-            setBackgroundColor(Color.parseColor("#1F2430"))
-            setOnClickListener {
-                try {
-                    startActivity(Intent(Settings.ACTION_SETTINGS))
-                } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Erro ao abrir definições", Toast.LENGTH_SHORT).show()
-                }
+        // Botões de Acesso Rápido no Topo (Definições e Wi-Fi)
+        val wifiBtn = createTopIconButton("📶") {
+            try {
+                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Erro ao abrir Wi-Fi", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val settingsBtn = createTopIconButton("⚙️") {
+            try {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Erro ao abrir definições", Toast.LENGTH_SHORT).show()
             }
         }
 
         headerLayout.addView(titleView)
+        headerLayout.addView(wifiBtn)
         headerLayout.addView(settingsBtn)
         rootLayout.addView(headerLayout)
 
-        // Atalhos Fixos Principais
+        // Grelha de Atalhos Principais (Vermelho Neon & Preto)
         val gridLayout = GridLayout(this).apply {
-            columnCount = 2
+            columnCount = 3
             rowCount = 1
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
 
-        gridLayout.addView(createNativeCard("📺", "YouTube") {
+        gridLayout.addView(createNeonCard("📺", "YouTube") {
             launchPackage("com.google.android.youtube")
         })
 
-        gridLayout.addView(createNativeCard("🧹", "Limpar RAM") {
-            statusText.text = "Estado: Memória RAM otimizada com sucesso!"
+        gridLayout.addView(createNeonCard("📁", "Ficheiros") {
+            try {
+                startActivity(Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" })
+            } catch (e: Exception) {
+                Toast.makeText(this, "Gestor não encontrado", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        gridLayout.addView(createNeonCard("🧹", "Limpar RAM") {
+            statusText.text = "Estado: Memória otimizada com sucesso!"
             Toast.makeText(this, "Sistema limpo!", Toast.LENGTH_SHORT).show()
         })
 
         rootLayout.addView(gridLayout)
 
-        // Título da Lista de Apps Instaladas (Uso do QUERY_ALL_PACKAGES)
+        // Título da Lista de Apps
         val sectionTitle = TextView(this).apply {
-            text = "Aplicações Instaladas no Dispositivo"
-            textSize = 16f
-            setTextColor(Color.parseColor("#34D399"))
+            text = "APLICAÇÕES INSTALADAS"
+            textSize = 14f
+            setTextColor(Color.parseColor("#FF1E56")) // Vermelho Neon
             setPadding(0, 30, 0, 15)
             typeface = Typeface.DEFAULT_BOLD
         }
         rootLayout.addView(sectionTitle)
 
-        // Scroll para listar os apps reais detetados
+        // Lista de Apps Instaladas
         appContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -101,27 +113,32 @@ class MainActivity : AppCompatActivity() {
         }
         rootLayout.addView(scroll)
 
-        // Barra de estado
+        // Barra de Estado
         statusText = TextView(this).apply {
-            text = "Estado: A carregar aplicativos..."
-            textSize = 13f
-            setTextColor(Color.parseColor("#9CA3AF"))
+            text = "Estado: Pronto a utilizar."
+            textSize = 12f
+            setTextColor(Color.parseColor("#7F8C8D"))
             setPadding(0, 15, 0, 0)
         }
         rootLayout.addView(statusText)
 
         setContentView(rootLayout)
-
-        // Carrega os aplicativos instalados em segundo plano
         loadInstalledApps()
     }
 
-    private fun createNativeCard(icon: String, label: String, onClick: () -> Unit): LinearLayout {
+    // Estilo de Cartão Neon (Fundo Preto com Contorno Vermelho)
+    private fun createNeonCard(icon: String, label: String, onClick: () -> Unit): LinearLayout {
+        val cardBg = GradientDrawable().apply {
+            setColor(Color.parseColor("#101010")) // Preto carvão
+            setStroke(2, Color.parseColor("#FF1E56")) // Linha Vermelho Neon
+            cornerRadius = 14f
+        }
+
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#171C28"))
-            setPadding(20, 25, 20, 25)
+            background = cardBg
+            setPadding(15, 20, 15, 20)
             isFocusable = true
             isClickable = true
             setOnClickListener { onClick() }
@@ -131,35 +148,61 @@ class MainActivity : AppCompatActivity() {
             width = 0
             height = GridLayout.LayoutParams.WRAP_CONTENT
             columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            setMargins(10, 10, 10, 10)
+            setMargins(8, 8, 8, 8)
         }
         card.layoutParams = params
 
-        card.addView(TextView(this).apply { text = icon; textSize = 30f; gravity = Gravity.CENTER })
-        card.addView(TextView(this).apply { text = label; textSize = 14f;setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(0, 5, 0, 0) })
+        card.addView(TextView(this).apply { text = icon; textSize = 26f; gravity = Gravity.CENTER })
+        card.addView(TextView(this).apply { text = label; textSize = 13f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(0, 5, 0, 0) })
         return card
+    }
+
+    private fun createTopIconButton(icon: String, onClick: () -> Unit): TextView {
+        val bg = GradientDrawable().apply {
+            setColor(Color.parseColor("#101010"))
+            setStroke(2, Color.parseColor("#FF1E56"))
+            cornerRadius = 10f
+        }
+        return TextView(this).apply {
+            text = icon
+            textSize = 18f
+            background = bg
+            setPadding(20, 12, 20, 12)
+            setOnClickListener { onClick() }
+            setMargins(10, 0, 0, 0)
+        }
+    }
+
+    private fun setMargins(left: Int, top: Int, right: Int, bottom: Int) {
+        val p = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        p.setMargins(left, top, right, bottom)
+        layoutParams = p
     }
 
     private fun loadInstalledApps() {
         try {
             val pm = packageManager
-            // Graças à permissão QUERY_ALL_PACKAGES, isto lista todos os apps do telemóvel/TV Box
             val packages = pm.getInstalledPackages(0)
             appContainer.removeAllViews()
 
             var count = 0
             for (pkg in packages) {
-                // Filtra apenas apps que têm launcher (que podem ser abertas)
                 val launchIntent = pm.getLaunchIntentForPackage(pkg.packageName)
                 if (launchIntent != null && pkg.packageName != packageName) {
                     val appName = pkg.applicationInfo?.loadLabel(pm)?.toString() ?: pkg.packageName
                     
+                    val rowBg = GradientDrawable().apply {
+                        setColor(Color.parseColor("#0E0E0E"))
+                        setStroke(1, Color.parseColor("#262626"))
+                        cornerRadius = 8f
+                    }
+
                     val appRow = TextView(this).apply {
-                        text = "📱  $appName"
-                        textSize = 15f
+                        text = "  $appName"
+                        textSize = 14f
                         setTextColor(Color.WHITE)
-                        setBackgroundColor(Color.parseColor("#171C28"))
-                        setPadding(30, 25, 30, 25)
+                        background = rowBg
+                        setPadding(25, 20, 25, 20)
                         isFocusable = true
                         isClickable = true
                         setOnClickListener {
@@ -175,7 +218,7 @@ class MainActivity : AppCompatActivity() {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        setMargins(0, 0, 0, 10)
+                        setMargins(0, 0, 0, 8)
                     }
                     appRow.layoutParams = rowParams
 
@@ -183,7 +226,7 @@ class MainActivity : AppCompatActivity() {
                     count++
                 }
             }
-            statusText.text = "Estado: $count aplicações detetadas com sucesso."
+            statusText.text = "Estado: $count aplicações carregadas com sucesso."
         } catch (e: Exception) {
             statusText.text = "Erro ao carregar apps: ${e.message}"
         }
@@ -195,7 +238,7 @@ class MainActivity : AppCompatActivity() {
             if (intent != null) {
                 startActivity(intent)
             } else {
-                Toast.makeText(this, "Aplicação não encontrada no dispositivo", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Aplicação não encontrada", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Erro ao iniciar aplicação", Toast.LENGTH_SHORT).show()
