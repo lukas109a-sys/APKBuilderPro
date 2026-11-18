@@ -7,16 +7,15 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
-import android.widget.GridLayout
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var appContainer: LinearLayout
+    private lateinit var horizontalAppsLayout: LinearLayout
     private lateinit var statusText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,214 +24,194 @@ class MainActivity : AppCompatActivity() {
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#050505"))
-            setPadding(40, 40, 40, 40)
+            setPadding(35, 25, 35, 25)
         }
 
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 25)
+            setPadding(0, 0, 0, 20)
         }
 
-        val titleView = TextView(this).apply {
-            text = "RED TV LAUNCHER"
-            textSize = 24f
+        val logoText = TextView(this).apply {
+            text = "RED TV"
+            textSize = 22f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        val wifiBtn = createTopIconButton("📶") {
-            try {
-                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro ao abrir Wi-Fi", Toast.LENGTH_SHORT).show()
-            }
+        val wifiButton = createHeaderButton("📶 Wi-Fi") {
+            try { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) } catch (e: Exception) {}
+        }
+        val settingsButton = createHeaderButton("⚙️ Definições") {
+            try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) {}
         }
 
-        val settingsBtn = createTopIconButton("⚙️") {
-            try {
-                startActivity(Intent(Settings.ACTION_SETTINGS))
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro ao abrir definições", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        headerLayout.addView(titleView)
-        headerLayout.addView(wifiBtn)
-        headerLayout.addView(settingsBtn)
+        headerLayout.addView(logoText)
+        headerLayout.addView(wifiButton)
+        headerLayout.addView(settingsButton)
         rootLayout.addView(headerLayout)
 
-        val gridLayout = GridLayout(this).apply {
-            columnCount = 3
-            rowCount = 1
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        val bannerCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.BOTTOM
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#121212"))
+                setStroke(2, Color.parseColor("#FF1E56"))
+                cornerRadius = 16f
+            }
+            setPadding(30, 30, 30, 30)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                180
+            ).apply { setMargins(0, 0, 0, 25) }
         }
 
-        gridLayout.addView(createNeonCard("📺", "YouTube") {
-            launchPackage("com.google.android.youtube")
-        })
-
-        gridLayout.addView(createNeonCard("📁", "Ficheiros") {
-            try {
-                startActivity(Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" })
-            } catch (e: Exception) {
-                Toast.makeText(this, "Gestor não encontrado", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        gridLayout.addView(createNeonCard("🧹", "Limpar RAM") {
-            statusText.text = "Estado: Memória otimizada com sucesso!"
-            Toast.makeText(this, "Sistema limpo!", Toast.LENGTH_SHORT).show()
-        })
-
-        rootLayout.addView(gridLayout)
+        val bannerTitle = TextView(this).apply {
+            text = "BEM-VINDO À SUA TV BOX"
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val bannerSub = TextView(this).apply {
+            text = "Navegue pelas aplicações abaixo com suporte total QUERY_ALL_PACKAGES."
+            textSize = 12f
+            setTextColor(Color.parseColor("#AAAAAA"))
+        }
+        bannerCard.addView(bannerTitle)
+        bannerCard.addView(bannerSub)
+        rootLayout.addView(bannerCard)
 
         val sectionTitle = TextView(this).apply {
             text = "APLICAÇÕES INSTALADAS"
-            textSize = 14f
+            textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
-            setPadding(0, 30, 0, 15)
             typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, 10)
         }
         rootLayout.addView(sectionTitle)
 
-        appContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+        horizontalAppsLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
 
-        val scroll = ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
-            addView(appContainer)
+        val horizontalScroll = HorizontalScrollView(this).apply {
+            isFillViewport = true
+            addView(horizontalAppsLayout)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
         }
-        rootLayout.addView(scroll)
+        rootLayout.addView(horizontalScroll)
 
         statusText = TextView(this).apply {
-            text = "Estado: Pronto a utilizar."
-            textSize = 12f
+            text = "Sistema pronto para TV Box."
+            textSize = 11f
             setTextColor(Color.parseColor("#7F8C8D"))
-            setPadding(0, 15, 0, 0)
+            setPadding(0, 10, 0, 0)
         }
         rootLayout.addView(statusText)
 
         setContentView(rootLayout)
-        loadInstalledApps()
+        loadInstalledAppsAsBanners()
     }
 
-    private fun createNeonCard(icon: String, label: String, onClick: () -> Unit): LinearLayout {
-        val cardBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#101010"))
-            setStroke(2, Color.parseColor("#FF1E56"))
-            cornerRadius = 14f
-        }
-
-        val card = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            background = cardBg
-            setPadding(15, 20, 15, 20)
-            isFocusable = true
-            isClickable = true
-            setOnClickListener { onClick() }
-        }
-
-        val params = GridLayout.LayoutParams().apply {
-            width = 0
-            height = GridLayout.LayoutParams.WRAP_CONTENT
-            columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            setMargins(8, 8, 8, 8)
-        }
-        card.layoutParams = params
-
-        card.addView(TextView(this).apply { text = icon; textSize = 26f; gravity = Gravity.CENTER })
-        card.addView(TextView(this).apply { text = label; textSize = 13f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(0, 5, 0, 0) })
-        return card
-    }
-
-    private fun createTopIconButton(icon: String, onClick: () -> Unit): TextView {
+    private fun createHeaderButton(textStr: String, onClick: () -> Unit): TextView {
         val bg = GradientDrawable().apply {
             setColor(Color.parseColor("#101010"))
-            setStroke(2, Color.parseColor("#FF1E56"))
-            cornerRadius = 10f
+            setStroke(1, Color.parseColor("#FF1E56"))
+            cornerRadius = 8f
         }
         return TextView(this).apply {
-            text = icon
-            textSize = 18f
+            text = textStr
+            textSize = 13f
+            setTextColor(Color.WHITE)
             background = bg
-            setPadding(20, 12, 20, 12)
+            setPadding(15, 8, 15, 8)
             setOnClickListener { onClick() }
+            isFocusable = true
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(10, 0, 0, 0)
-            }
+            ).apply { setMargins(10, 0, 0, 0) }
         }
     }
 
-    private fun loadInstalledApps() {
+    private fun loadInstalledAppsAsBanners() {
         try {
             val pm = packageManager
             val packages = pm.getInstalledPackages(0)
-            appContainer.removeAllViews()
+            horizontalAppsLayout.removeAllViews()
 
-            var count = 0
             for (pkg in packages) {
                 val launchIntent = pm.getLaunchIntentForPackage(pkg.packageName)
                 if (launchIntent != null && pkg.packageName != packageName) {
                     val appName = pkg.applicationInfo?.loadLabel(pm)?.toString() ?: pkg.packageName
-                    
-                    val rowBg = GradientDrawable().apply {
-                        setColor(Color.parseColor("#0E0E0E"))
-                        setStroke(1, Color.parseColor("#262626"))
-                        cornerRadius = 8f
+
+                    val cardBg = GradientDrawable().apply {
+                        setColor(Color.parseColor("#141414"))
+                        setStroke(2, Color.parseColor("#262626"))
+                        cornerRadius = 12f
                     }
 
-                    val appRow = TextView(this).apply {
-                        text = "  $appName"
-                        textSize = 14f
-                        setTextColor(Color.WHITE)
-                        background = rowBg
-                        setPadding(25, 20, 25, 20)
+                    val appCard = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER
+                        background = cardBg
+                        setPadding(20, 15, 20, 15)
                         isFocusable = true
                         isClickable = true
-                        setOnClickListener {
-                            try {
-                                startActivity(launchIntent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Erro ao abrir app", Toast.LENGTH_SHORT).show()
+                        
+                        setOnFocusChangeListener { _, hasFocus ->
+                            if (hasFocus) {
+                                background = GradientDrawable().apply {
+                                    setColor(Color.parseColor("#1E1E1E"))
+                                    setStroke(3, Color.parseColor("#FF1E56"))
+                                    cornerRadius = 12f
+                                }
+                            } else {
+                                background = cardBg
                             }
+                        }
+
+                        setOnClickListener {
+                            try { startActivity(launchIntent) } catch (e: Exception) {}
                         }
                     }
 
-                    val rowParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins(0, 0, 0, 8)
+                    val params = LinearLayout.LayoutParams(160, 110).apply {
+                        setMargins(0, 0, 15, 0)
                     }
-                    appRow.layoutParams = rowParams
+                    appCard.layoutParams = params
 
-                    appContainer.addView(appRow)
-                    count++
+                    val iconText = TextView(this).apply {
+                        text = "📺"
+                        textSize = 28f
+                        gravity = Gravity.CENTER
+                    }
+
+                    val nameText = TextView(this).apply {
+                        text = appName
+                        textSize = 12f
+                        setTextColor(Color.WHITE)
+                        typeface = Typeface.DEFAULT_BOLD
+                        gravity = Gravity.CENTER
+                        maxLines = 1
+                        setPadding(0, 5, 0, 0)
+                    }
+
+                    appCard.addView(iconText)
+                    appCard.addView(nameText)
+                    horizontalAppsLayout.addView(appCard)
                 }
             }
-            statusText.text = "Estado: $count aplicações carregadas com sucesso."
+            statusText.text = "Apps carregadas em modo paisagem horizontal."
         } catch (e: Exception) {
-            statusText.text = "Erro ao carregar apps: ${e.message}"
-        }
-    }
-
-    private fun launchPackage(packageName: String) {
-        try {
-            val intent = packageManager.getLaunchIntentForPackage(packageName)
-            if (intent != null) {
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "Aplicação não encontrada", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Erro ao iniciar aplicação", Toast.LENGTH_SHORT).show()
+            statusText.text = "Erro ao carregar grelha."
         }
     }
 }
