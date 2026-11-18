@@ -7,6 +7,8 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
+import android.view.Window
+import android.view.WindowManager
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -19,30 +21,36 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
-    private lateinit var statusText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ecrã Principal Paisagem (Fundo Preto Absoluto)
+        // Ecrã Inteiro Absoluto (Sem barra de título)
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+        supportActionBar?.hide()
+
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#050505"))
-            setPadding(25, 15, 25, 15)
+            setPadding(24, 12, 24, 12)
         }
 
         // ==========================================
-        // CABEÇALHO (Topo Esquerdo: Logo | Topo Direito: Ícones e Relógio)
+        // CABEÇALHO
         // ==========================================
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 10)
+            setPadding(0, 0, 0, 8)
         }
 
         val logoText = TextView(this).apply {
             text = "RED TV"
-            textSize = 18f
+            textSize = 16f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -55,14 +63,14 @@ class MainActivity : AppCompatActivity() {
 
         val searchIcon = createTopMiniBtn("🔍") { Toast.makeText(this, "Pesquisa", Toast.LENGTH_SHORT).show() }
         val msgIcon = createTopMiniBtn("✉️") { Toast.makeText(this, "Mensagens", Toast.LENGTH_SHORT).show() }
-        val infoIcon = createTopMiniBtn("ℹ️") { Toast.makeText(this, "Informação do Sistema", Toast.LENGTH_SHORT).show() }
+        val infoIcon = createTopMiniBtn("ℹ️") { Toast.makeText(this, "Sistema", Toast.LENGTH_SHORT).show() }
         
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateText = TextView(this).apply {
             text = "Quarta-feira | ${timeFormat.format(Date())}"
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.parseColor("#CCCCCC"))
-            setPadding(15, 0, 0, 0)
+            setPadding(10, 0, 0, 0)
         }
 
         iconsHeaderLayout.addView(searchIcon)
@@ -75,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         rootLayout.addView(headerLayout)
 
         // ==========================================
-        // CORPO CENTRAL (Esquerda: 3 botões | Centro: Player/Destaque | Direita: 3 botões)
+        // CORPO CENTRAL (3 Colunas)
         // ==========================================
         val middleBody = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -83,16 +91,16 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
-                1.4f
-            ).apply { setMargins(0, 0, 0, 10) }
+                1f
+            ).apply { setMargins(0, 0, 0, 8) }
         }
 
-        // Coluna Esquerda (3 Botões empilhados exatamente como no modelo)
+        // Coluna Esquerda
         val leftCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(180, LinearLayout.LayoutParams.MATCH_PARENT).apply {
-                setMargins(0, 0, 10, 0)
+            layoutParams = LinearLayout.LayoutParams(160, LinearLayout.LayoutParams.MATCH_PARENT).apply {
+                setMargins(0, 0, 8, 0)
             }
         }
         leftCol.addView(createModelButton("📺 Guia TV") { Toast.makeText(this, "Guia TV", Toast.LENGTH_SHORT).show() })
@@ -100,64 +108,76 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel de Destaque Multimédia (Com moldura vermelha neon)
+        // Centro: Painel de Destaque com imagem/paisagem simulada
         val centerCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#101010"))
+                setColor(Color.parseColor("#121212"))
                 setStroke(2, Color.parseColor("#FF1E56"))
-                cornerRadius = 14f
+                cornerRadius = 12f
             }
-            setPadding(20, 20, 20, 20)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f).apply {
-                setMargins(0, 0, 10, 0)
+            setPadding(18, 18, 18, 18)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2f).apply {
+                setMargins(0, 0, 8, 0)
             }
+        }
+
+        val landscapeView = TextView(this).apply {
+            text = "🌄 [ PAISAGEM / DESTAQUE MULTIMÉDIA ]"
+            textSize = 13f
+            setTextColor(Color.parseColor("#FF1E56"))
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, 20, 0, 20)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
         }
 
         val cardMainTitle = TextView(this).apply {
             text = "CENTRAL RED TV"
-            textSize = 15f
+            textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
         val cardMainSub = TextView(this).apply {
-            text = "Aceda rapidamente aos seus conteúdos e desfrute de navegação fluida por D-Pad."
-            textSize = 11f
+            text = "Conteúdo em destaque com suporte QUERY_ALL_PACKAGES."
+            textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
+
+        centerCard.addView(landscapeView)
         centerCard.addView(cardMainTitle)
         centerCard.addView(cardMainSub)
         middleBody.addView(centerCard)
 
-        // Coluna Direita (3 Botões empilhados exatamente como no modelo: Definições, Loja, Apps)
+        // Coluna Direita (Botão Loja TV configurado para Play Store)
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(180, LinearLayout.LayoutParams.MATCH_PARENT)
+            layoutParams = LinearLayout.LayoutParams(160, LinearLayout.LayoutParams.MATCH_PARENT)
         }
         rightCol.addView(createModelButton("⚙️ Definições") { 
             try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) {}
         })
         rightCol.addView(createModelButton("🛒 Loja TV") { 
-            try { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) } catch (e: Exception) {}
+            launchPackage("com.android.vending") // Abre a Google Play Store
         })
         rightCol.addView(createModelButton("📱 Apps e Jogos") { 
-            Toast.makeText(this, "Grelha de Apps abaixo", Toast.LENGTH_SHORT).show() 
+            Toast.makeText(this, "Grelha em baixo", Toast.LENGTH_SHORT).show() 
         })
         middleBody.addView(rightCol)
 
         rootLayout.addView(middleBody)
 
         // ==========================================
-        // PARTE INFERIOR: "Mes apps" (Carrossel Horizontal de Aplicações)
+        // PARTE INFERIOR: "Mes apps"
         // ==========================================
         val sectionTitle = TextView(this).apply {
             text = "Mes apps"
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, 5)
+            setPadding(0, 0, 0, 3)
         }
         rootLayout.addView(sectionTitle)
 
@@ -171,19 +191,10 @@ class MainActivity : AppCompatActivity() {
             addView(horizontalAppsLayout)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                85
+                75
             )
         }
         rootLayout.addView(horizontalScroll)
-
-        // Rodapé informativo subtil
-        statusText = TextView(this).apply {
-            text = "Modo TV Box operando com QUERY_ALL_PACKAGES."
-            textSize = 9f
-            setTextColor(Color.parseColor("#555555"))
-            setPadding(0, 4, 0, 0)
-        }
-        rootLayout.addView(statusText)
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
@@ -197,15 +208,15 @@ class MainActivity : AppCompatActivity() {
         }
         return TextView(this).apply {
             text = iconStr
-            textSize = 12f
+            textSize = 11f
             background = bg
-            setPadding(10, 6, 10, 6)
+            setPadding(8, 4, 8, 4)
             setOnClickListener { onClick() }
             isFocusable = true
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(6, 0, 0, 0) }
+            ).apply { setMargins(5, 0, 0, 0) }
         }
     }
 
@@ -213,14 +224,14 @@ class MainActivity : AppCompatActivity() {
         val bg = GradientDrawable().apply {
             setColor(Color.parseColor("#141414"))
             setStroke(1, Color.parseColor("#262626"))
-            cornerRadius = 8f
+            cornerRadius = 6f
         }
         return TextView(this).apply {
             text = textStr
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.WHITE)
             background = bg
-            setPadding(15, 12, 15, 12)
+            setPadding(10, 8, 10, 8)
             setOnClickListener { onClick() }
             isFocusable = true
             gravity = Gravity.CENTER_VERTICAL
@@ -230,7 +241,7 @@ class MainActivity : AppCompatActivity() {
                     background = GradientDrawable().apply {
                         setColor(Color.parseColor("#1E1E1E"))
                         setStroke(2, Color.parseColor("#FF1E56"))
-                        cornerRadius = 8f
+                        cornerRadius = 6f
                     }
                 } else {
                     background = bg
@@ -241,7 +252,20 @@ class MainActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
                 1f
-            ).apply { setMargins(0, 0, 0, 5) }
+            ).apply { setMargins(0, 0, 0, 4) }
+        }
+    }
+
+    private fun launchPackage(packageName: String) {
+        try {
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) {
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Aplicação não encontrada", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Erro ao abrir aplicação", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -259,14 +283,14 @@ class MainActivity : AppCompatActivity() {
                     val cardBg = GradientDrawable().apply {
                         setColor(Color.parseColor("#141414"))
                         setStroke(1, Color.parseColor("#262626"))
-                        cornerRadius = 8f
+                        cornerRadius = 6f
                     }
 
                     val appCard = LinearLayout(this).apply {
                         orientation = LinearLayout.HORIZONTAL
                         gravity = Gravity.CENTER_VERTICAL
                         background = cardBg
-                        setPadding(12, 8, 12, 8)
+                        setPadding(10, 4, 10, 4)
                         isFocusable = true
                         isClickable = true
                         
@@ -275,7 +299,7 @@ class MainActivity : AppCompatActivity() {
                                 background = GradientDrawable().apply {
                                     setColor(Color.parseColor("#1E1E1E"))
                                     setStroke(2, Color.parseColor("#FF1E56"))
-                                    cornerRadius = 8f
+                                    cornerRadius = 6f
                                 }
                             } else {
                                 background = cardBg
@@ -287,20 +311,20 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    val params = LinearLayout.LayoutParams(180, LinearLayout.LayoutParams.MATCH_PARENT).apply {
-                        setMargins(0, 0, 10, 0)
+                    val params = LinearLayout.LayoutParams(165, LinearLayout.LayoutParams.MATCH_PARENT).apply {
+                        setMargins(0, 0, 8, 0)
                     }
                     appCard.layoutParams = params
 
                     val iconText = TextView(this).apply {
                         text = "📺"
-                        textSize = 18f
-                        setPadding(0, 0, 8, 0)
+                        textSize = 16f
+                        setPadding(0, 0, 6, 0)
                     }
 
                     val nameText = TextView(this).apply {
                         text = appName
-                        textSize = 11f
+                        textSize = 10f
                         setTextColor(Color.WHITE)
                         typeface = Typeface.DEFAULT_BOLD
                         maxLines = 2
@@ -311,9 +335,8 @@ class MainActivity : AppCompatActivity() {
                     horizontalAppsLayout.addView(appCard)
                 }
             }
-            statusText.text = "Disposição espelhada do modelo aplicada com sucesso."
         } catch (e: Exception) {
-            statusText.text = "Erro ao carregar aplicações."
+            // Tratamento silencioso
         }
     }
 }
