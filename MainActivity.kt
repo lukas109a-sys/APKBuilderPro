@@ -16,27 +16,26 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
-    private lateinit var spotlightPoster: TextView
+    private lateinit var spotlightCard: LinearLayout
+    private lateinit var spotlightTag: TextView
     private lateinit var spotlightTitle: TextView
     private lateinit var spotlightDesc: TextView
 
-    // Lista temporária de segurança caso a rede demore
-    private var dynamicReleases = mutableListOf(
-        Triple("🎬 [ GOOGLE TV: SINCRONIZANDO WEB... ]", "RED TV CLOUD", "A ligar aos servidores de cinema e streaming em tempo real...")
+    // Temas e papéis de parede visuais em rotação contínua (estética OLED & Red Neon)
+    private val wallpaperThemes = listOf(
+        Triple("🔴 [ AMBIENTE: NEON RED OLED ]", "RED TV CINEMATIC", "Iluminação de alta profundidade com preto absoluto para ecrãs OLED."),
+        Triple("🌌 [ AMBIENTE: ESPAÇO SIDERAL ]", "IMERSÃO CÓSMICA", "Wallpapers dinâmicos inspirados nas galáxias e universos profundos."),
+        Triple("⚡ [ AMBIENTE: CYBERPUNK RED ]", "FUTURO DISTÓPICO", "Linhas minimalistas em vermelho vivo e transições futuristas."),
+        Triple("🔥 [ AMBIENTE: MINIMALISMO ESCURO ]", "FOCO TOTAL NO CONTEÚDO", "Design limpo, elegante e sem distrações visuais excessivas.")
     )
-    
+
     private var currentIndex = 0
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var rotatorRunnable: Runnable
@@ -122,12 +121,12 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel Google TV com Lançamentos Atuais da Internet
-        val centerCard = LinearLayout(this).apply {
+        // Centro: Painel com Wallpapers e Temas Visuais Dinâmicos
+        spotlightCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#121212"))
+                setColor(Color.parseColor("#0D0D0D"))
                 setStroke(2, Color.parseColor("#FF1E56"))
                 cornerRadius = 12f
             }
@@ -137,8 +136,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        spotlightPoster = TextView(this).apply {
-            text = dynamicReleases[0].first
+        spotlightTag = TextView(this).apply {
+            text = wallpaperThemes[0].first
             textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
@@ -147,21 +146,21 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightTitle = TextView(this).apply {
-            text = dynamicReleases[0].second
+            text = wallpaperThemes[0].second
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
         spotlightDesc = TextView(this).apply {
-            text = dynamicReleases[0].third
+            text = wallpaperThemes[0].third
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
 
-        centerCard.addView(spotlightPoster)
-        centerCard.addView(spotlightTitle)
-        centerCard.addView(spotlightDesc)
-        middleBody.addView(centerCard)
+        spotlightCard.addView(spotlightTag)
+        spotlightCard.addView(spotlightTitle)
+        spotlightCard.addView(spotlightDesc)
+        middleBody.addView(spotlightCard)
 
         // Coluna Direita (Loja TV -> Play Store)
         val rightCol = LinearLayout(this).apply {
@@ -209,80 +208,29 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        
-        // Puxar lançamentos reais da internet em background
-        fetchLiveReleasesFromWeb()
+        startWallpaperRotator()
     }
 
-    private fun fetchLiveReleasesFromWeb() {
-        thread {
-            try {
-                val url = URL("https://api.themoviedb.org/3/movie/now_playing?api_key=c22634e304b4f535352c8b74542d997d&language=pt-PT")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-
-                if (connection.responseCode == 200) {
-                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                    val response = StringBuilder()
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        response.append(line)
-                    }
-                    reader.close()
-
-                    // Processamento simples do JSON nativo sem bibliotecas externas
-                    val jsonStr = response.toString()
-                    val resultsMarker = "\"results\":"
-                    val resultsIndex = jsonStr.indexOf(resultsMarker)
-                    if (resultsIndex != -1) {
-                        val newReleases = mutableListOf<Triple<String, String, String>>()
-                        // Extração dinâmica de títulos e sinopses do feed oficial de cinema
-                        val rawTitles = jsonStr.split("\"title\":\"")
-                        for (i in 1 until minOf(rawTitles.size, 6)) {
-                            val titlePart = rawTitles[i].split("\"")[0]
-                            val overviewPart = if (rawTitles[i].contains("\"overview\":\"")) {
-                                val ov = rawTitles[i].split("\"overview\":\"")[1].split("\"")[0]
-                                if (ov.length > 85) ov.substring(0, 85) + "..." else ov
-                            } else {
-                                "Estreia em destaque nos cinemas e plataformas digitais."
-                            }
-                            newReleases.add(
-                                Triple(
-                                    "🎬 [ EM CARTAZ: $titlePart ]",
-                                    "🔥 ESTREIA OFICIAL: $titlePart",
-                                    overviewPart
-                                )
-                            )
-                        }
-
-                        if (newReleases.isNotEmpty()) {
-                            handler.post {
-                                dynamicReleases = newReleases
-                                startPosterRotator()
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                // Mantém rotação local se falhar a rede
-            }
-        }
-    }
-
-    private fun startPosterRotator() {
-        if (dynamicReleases.isEmpty()) return
+    private fun startWallpaperRotator() {
         rotatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % dynamicReleases.size
-                spotlightPoster.text = dynamicReleases[currentIndex].first
-                spotlightTitle.text = dynamicReleases[currentIndex].second
-                spotlightDesc.text = dynamicReleases[currentIndex].third
-                handler.postDelayed(this, 5000) // Roda a cada 5 segundos automaticamente
+                currentIndex = (currentIndex + 1) % wallpaperThemes.size
+                spotlightTag.text = wallpaperThemes[currentIndex].first
+                spotlightTitle.text = wallpaperThemes[currentIndex].second
+                spotlightDesc.text = wallpaperThemes[currentIndex].third
+
+                // Varia subtilmente o tom de fundo do painel para dar efeito dinâmico de wallpaper
+                val bgColors = listOf("#0D0D0D", "#11090B", "#080C10", "#0F0A0A")
+                spotlightCard.background = GradientDrawable().apply {
+                    setColor(Color.parseColor(bgColors[currentIndex % bgColors.size]))
+                    setStroke(2, Color.parseColor("#FF1E56"))
+                    cornerRadius = 12f
+                }
+
+                handler.postDelayed(this, 5000) // Troca de tema/wallpaper a cada 5 segundos
             }
         }
-        handler.post(rotatorRunnable)
+        handler.postDelayed(rotatorRunnable, 5000)
     }
 
     override fun onDestroy() {
