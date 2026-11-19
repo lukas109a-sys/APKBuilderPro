@@ -24,16 +24,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
     private lateinit var spotlightCard: LinearLayout
-    private lateinit var spotlightTag: TextView
+    private lateinit var wallpaperArtText: TextView
     private lateinit var spotlightTitle: TextView
     private lateinit var spotlightDesc: TextView
 
-    // Temas e papéis de parede visuais em rotação contínua (estética OLED & Red Neon)
-    private val wallpaperThemes = listOf(
-        Triple("🔴 [ AMBIENTE: NEON RED OLED ]", "RED TV CINEMATIC", "Iluminação de alta profundidade com preto absoluto para ecrãs OLED."),
-        Triple("🌌 [ AMBIENTE: ESPAÇO SIDERAL ]", "IMERSÃO CÓSMICA", "Wallpapers dinâmicos inspirados nas galáxias e universos profundos."),
-        Triple("⚡ [ AMBIENTE: CYBERPUNK RED ]", "FUTURO DISTÓPICO", "Linhas minimalistas em vermelho vivo e transições futuristas."),
-        Triple("🔥 [ AMBIENTE: MINIMALISMO ESCURO ]", "FOCO TOTAL NO CONTEÚDO", "Design limpo, elegante e sem distrações visuais excessivas.")
+    // Coleção de papéis de parede visuais dinâmicos (Arte abstrata, gradientes e temas OLED)
+    private val wallpaperArtList = listOf(
+        Triple("🌟 [ WALLPAPER: NEON RED & ABYSS ]", "RED TV CINEMATIC OLED", "Ecrã total com preto absoluto e moldura em vermelho vivo."),
+        Triple("🌌 [ WALLPAPER: CÓSMICO PROFUNDO ]", "DEEP SPACE AMBIENT", "Fundo escuro estelar com gradientes de alta imersão visual."),
+        Triple("⚡ [ WALLPAPER: CYBERPUNK RED ]", "FUTURISTIC RETRO", "Estética de luzes dinâmicas e design minimalista avançado."),
+        Triple("🔥 [ WALLPAPER: AURORA BOREALIS ]", "RED GLOW DYNAMICS", "Transição de tons escuros profundos com brilho lateral em LED.")
     )
 
     private var currentIndex = 0
@@ -121,23 +121,19 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel com Wallpapers e Temas Visuais Dinâmicos
+        // Centro: Painel com Papel de Parede Dinâmico e Arte Visual Rotativa
         spotlightCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
-            background = GradientDrawable().apply {
-                setColor(Color.parseColor("#0D0D0D"))
-                setStroke(2, Color.parseColor("#FF1E56"))
-                cornerRadius = 12f
-            }
+            background = createWallpaperBackground(0)
             setPadding(18, 18, 18, 18)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2f).apply {
                 setMargins(0, 0, 8, 0)
             }
         }
 
-        spotlightTag = TextView(this).apply {
-            text = wallpaperThemes[0].first
+        wallpaperArtText = TextView(this).apply {
+            text = wallpaperArtList[0].first
             textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
@@ -146,18 +142,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightTitle = TextView(this).apply {
-            text = wallpaperThemes[0].second
+            text = wallpaperArtList[0].second
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
         }
         spotlightDesc = TextView(this).apply {
-            text = wallpaperThemes[0].third
+            text = wallpaperArtList[0].third
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
         }
 
-        spotlightCard.addView(spotlightTag)
+        spotlightCard.addView(wallpaperArtText)
         spotlightCard.addView(spotlightTitle)
         spotlightCard.addView(spotlightDesc)
         middleBody.addView(spotlightCard)
@@ -208,26 +204,35 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        startWallpaperRotator()
+        startWallpaperVisualRotator()
     }
 
-    private fun startWallpaperRotator() {
+    // Cria fundos gráficos dinâmicos diferentes para cada papel de parede visual
+    private fun createWallpaperBackground(index: Int): GradientDrawable {
+        val colors = arrayOf(
+            intArrayOf(Color.parseColor("#140A0D"), Color.parseColor("#050505")), // Tema 1: Vermelho escuro profundo
+            intArrayOf(Color.parseColor("#091018"), Color.parseColor("#050505")), // Tema 2: Azul estelar escuro
+            intArrayOf(Color.parseColor("#180A14"), Color.parseColor("#050505")), // Tema 3: Magenta escuro cyber
+            intArrayOf(Color.parseColor("#0D140A"), Color.parseColor("#050505"))  // Tema 4: Verde escuro neon
+        )
+        return GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors[index % colors.size]).apply {
+            setStroke(2, Color.parseColor("#FF1E56"))
+            cornerRadius = 12f
+        }
+    }
+
+    private fun startWallpaperVisualRotator() {
         rotatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % wallpaperThemes.size
-                spotlightTag.text = wallpaperThemes[currentIndex].first
-                spotlightTitle.text = wallpaperThemes[currentIndex].second
-                spotlightDesc.text = wallpaperThemes[currentIndex].third
+                currentIndex = (currentIndex + 1) % wallpaperArtList.size
+                wallpaperArtText.text = wallpaperArtList[currentIndex].first
+                spotlightTitle.text = wallpaperArtList[currentIndex].second
+                spotlightDesc.text = wallpaperArtList[currentIndex].third
 
-                // Varia subtilmente o tom de fundo do painel para dar efeito dinâmico de wallpaper
-                val bgColors = listOf("#0D0D0D", "#11090B", "#080C10", "#0F0A0A")
-                spotlightCard.background = GradientDrawable().apply {
-                    setColor(Color.parseColor(bgColors[currentIndex % bgColors.size]))
-                    setStroke(2, Color.parseColor("#FF1E56"))
-                    cornerRadius = 12f
-                }
+                // Altera completamente o fundo visual / papel de parede do painel central
+                spotlightCard.background = createWallpaperBackground(currentIndex)
 
-                handler.postDelayed(this, 5000) // Troca de tema/wallpaper a cada 5 segundos
+                handler.postDelayed(this, 5000) // Transição visual a cada 5 segundos
             }
         }
         handler.postDelayed(rotatorRunnable, 5000)
