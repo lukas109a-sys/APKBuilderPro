@@ -26,17 +26,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var spotlightCard: LinearLayout
     private lateinit var centerLabel: TextView
 
-    // Lista apenas com as cores e tons dinâmicos que mudam de aspeto e vibram visualmente
-    private val colorThemes = listOf(
-        Pair(Color.parseColor("#FF1E56"), intArrayOf(Color.parseColor("#1a050a"), Color.parseColor("#080204"))),
-        Pair(Color.parseColor("#00E5FF"), intArrayOf(Color.parseColor("#03131a"), Color.parseColor("#010608"))),
-        Pair(Color.parseColor("#9C27B0"), intArrayOf(Color.parseColor("#14031a"), Color.parseColor("#070108"))),
-        Pair(Color.parseColor("#4CAF50"), intArrayOf(Color.parseColor("#051a08"), Color.parseColor("#020803")))
+    // Temas estritos em tons de Neon Puro (Verde Neon, Azul Neon, Vermelho Neon)
+    private val neonThemes = listOf(
+        Pair(Color.parseColor("#00FF66"), intArrayOf(Color.parseColor("#051A0A"), Color.parseColor("#020803"))), // Verde Neon
+        Pair(Color.parseColor("#00E5FF"), intArrayOf(Color.parseColor("#03131A"), Color.parseColor("#010608"))), // Azul Neon
+        Pair(Color.parseColor("#FF1E56"), intArrayOf(Color.parseColor("#1A050A"), Color.parseColor("#080204")))  // Vermelho Neon
     )
 
     private var currentIndex = 0
+    private var isTiltLeft = false
     private val handler = Handler(Looper.getMainLooper())
-    private lateinit var rotatorRunnable: Runnable
+    private lateinit var animatorRunnable: Runnable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,11 +119,11 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel Limpo com "LAUNCHER TV" e Cores Vibrantes Dinâmicas
+        // Centro: Painel com Letra Elegante, Cores Neon Vibrantes e Animação de Balanço
         spotlightCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            background = createVibrantBackground(0)
+            background = createNeonBackground(0)
             setPadding(18, 18, 18, 18)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2f).apply {
                 setMargins(0, 0, 8, 0)
@@ -132,9 +132,10 @@ class MainActivity : AppCompatActivity() {
 
         centerLabel = TextView(this).apply {
             text = "LAUNCHER TV"
-            textSize = 22f
-            setTextColor(colorThemes[0].first)
-            typeface = Typeface.DEFAULT_BOLD
+            textSize = 26f
+            setTextColor(neonThemes[0].first)
+            // Fonte limpa, moderna e elegante em negrito
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
             gravity = Gravity.CENTER
         }
 
@@ -187,36 +188,44 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        startColorVibrationRotator()
+        startNeonVibrationAndSwing()
     }
 
-    private fun createVibrantBackground(index: Int): GradientDrawable {
-        val theme = colorThemes[index % colorThemes.size]
+    private fun createNeonBackground(index: Int): GradientDrawable {
+        val theme = neonThemes[index % neonThemes.size]
         return GradientDrawable(GradientDrawable.Orientation.TL_BR, theme.second).apply {
             setStroke(4, theme.first)
             cornerRadius = 14f
         }
     }
 
-    private fun startColorVibrationRotator() {
-        rotatorRunnable = object : Runnable {
+    private fun startNeonVibrationAndSwing() {
+        animatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % colorThemes.size
+                // Alterna o tema neon (Verde, Azul, Vermelho)
+                currentIndex = (currentIndex + 1) % neonThemes.size
                 
-                // Atualiza a cor do texto e o fundo vibrante do painel central
-                centerLabel.setTextColor(colorThemes[currentIndex].first)
-                spotlightCard.background = createVibrantBackground(currentIndex)
+                centerLabel.setTextColor(neonThemes[currentIndex].first)
+                spotlightCard.background = createNeonBackground(currentIndex)
 
-                handler.postDelayed(this, 3000) // Vibra/troca de cor a cada 3 segundos
+                // Efeito suave de balanço de um lado para o outro (inclinação rotativa)
+                if (isTiltLeft) {
+                    centerLabel.rotation = -2.5f
+                } else {
+                    centerLabel.rotation = 2.5f
+                }
+                isTiltLeft = !isTiltLeft
+
+                handler.postDelayed(this, 2500) // Troca e balança a cada 2.5 segundos
             }
         }
-        handler.postDelayed(rotatorRunnable, 3000)
+        handler.postDelayed(animatorRunnable, 2500)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::rotatorRunnable.isInitialized) {
-            handler.removeCallbacks(rotatorRunnable)
+        if (::animatorRunnable.isInitialized) {
+            handler.removeCallbacks(animatorRunnable)
         }
     }
 
