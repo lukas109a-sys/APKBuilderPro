@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -75,9 +76,27 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val searchIcon = createTopMiniBtn("🔍") { Toast.makeText(this, "Pesquisa", Toast.LENGTH_SHORT).show() }
-        val msgIcon = createTopMiniBtn("✉️") { Toast.makeText(this, "Mensagens", Toast.LENGTH_SHORT).show() }
-        val infoIcon = createTopMiniBtn("ℹ️") { Toast.makeText(this, "Sistema", Toast.LENGTH_SHORT).show() }
+        val searchIcon = createTopMiniBtn("🔍") {
+            try {
+                startActivity(Intent(Intent.ACTION_WEB_SEARCH))
+            } catch (e: Exception) {
+                openBrowser("https://www.google.com")
+            }
+        }
+        val msgIcon = createTopMiniBtn("🧹") {
+            try {
+                startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Armazenamento", Toast.LENGTH_SHORT).show()
+            }
+        }
+        val infoIcon = createTopMiniBtn("ℹ️") {
+            try {
+                startActivity(Intent(Settings.ACTION_DEVICE_INFO_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "RED TV Launcher v1.0", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateText = TextView(this).apply {
@@ -107,17 +126,27 @@ class MainActivity : AppCompatActivity() {
             ).apply { setMargins(0, 0, 0, 8) }
         }
 
-        // Coluna Esquerda
+        // Coluna Esquerda com atalhos reais e funcionais
         val leftCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(160, LinearLayout.LayoutParams.MATCH_PARENT).apply {
+            layoutParams = LinearLayout.LayoutParams(175, LinearLayout.LayoutParams.MATCH_PARENT).apply {
                 setMargins(0, 0, 8, 0)
             }
         }
-        leftCol.addView(createModelButton("📺 Guia TV") { Toast.makeText(this, "Guia TV", Toast.LENGTH_SHORT).show() })
-        leftCol.addView(createModelButton("📁 Gravações") { Toast.makeText(this, "Gravações", Toast.LENGTH_SHORT).show() })
-        leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
+        leftCol.addView(createModelButton("▶️ YouTube") {
+            openYouTube()
+        })
+        leftCol.addView(createModelButton("📶 Wi-Fi / Rede") {
+            try {
+                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+            } catch (e: Exception) {
+                try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (ex: Exception) {}
+            }
+        })
+        leftCol.addView(createModelButton("🌐 Navegador") {
+            openBrowser("https://www.google.com")
+        })
         middleBody.addView(leftCol)
 
         // Centro: Painel com Letra Elegante, Cores Neon Vibrantes e Animação de Balanço
@@ -142,11 +171,11 @@ class MainActivity : AppCompatActivity() {
         spotlightCard.addView(centerLabel)
         middleBody.addView(spotlightCard)
 
-        // Coluna Direita (Loja TV -> Play Store)
+        // Coluna Direita (Definições, Loja TV, Limpar Memória/Apps)
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(160, LinearLayout.LayoutParams.MATCH_PARENT)
+            layoutParams = LinearLayout.LayoutParams(175, LinearLayout.LayoutParams.MATCH_PARENT)
         }
         rightCol.addView(createModelButton("⚙️ Definições") {
             try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) {}
@@ -154,8 +183,12 @@ class MainActivity : AppCompatActivity() {
         rightCol.addView(createModelButton("🛒 Loja TV") {
             launchPackage("com.android.vending")
         })
-        rightCol.addView(createModelButton("📱 Apps e Jogos") {
-            Toast.makeText(this, "Grelha em baixo", Toast.LENGTH_SHORT).show()
+        rightCol.addView(createModelButton("📱 Gerir Apps") {
+            try {
+                startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Grelha em baixo", Toast.LENGTH_SHORT).show()
+            }
         })
         middleBody.addView(rightCol)
 
@@ -189,6 +222,32 @@ class MainActivity : AppCompatActivity() {
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
         startNeonVibrationAndSwing()
+    }
+
+    private fun openYouTube() {
+        val ytPackages = listOf(
+            "com.google.android.youtube.tv",
+            "com.google.android.youtube",
+            "com.liskovsoft.smarttubetv.beta",
+            "com.liskovsoft.smarttubetv"
+        )
+        for (pkg in ytPackages) {
+            val intent = packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                startActivity(intent)
+                return
+            }
+        }
+        openBrowser("https://www.youtube.com")
+    }
+
+    private fun openBrowser(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Nenhum navegador encontrado", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun createNeonBackground(index: Int): GradientDrawable {
@@ -255,13 +314,14 @@ class MainActivity : AppCompatActivity() {
         }
         return TextView(this).apply {
             text = textStr
-            textSize = 11f
+            textSize = 10.5f
             setTextColor(Color.WHITE)
             background = bg
             setPadding(10, 8, 10, 8)
             setOnClickListener { onClick() }
             isFocusable = true
             gravity = Gravity.CENTER_VERTICAL
+            maxLines = 1
 
             setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) {
