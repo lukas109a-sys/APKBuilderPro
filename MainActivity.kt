@@ -24,16 +24,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
     private lateinit var spotlightCard: LinearLayout
-    private lateinit var wallpaperVisualBox: TextView
-    private lateinit var spotlightTitle: TextView
-    private lateinit var spotlightDesc: TextView
+    private lateinit var centerLabel: TextView
 
-    // Lista com elementos visuais gráficos e ícones marcantes que mudam a cada rotação
-    private val visualSlides = listOf(
-        Triple("🔴 🎬 [ ████████ RED TV CINEMATIC ████████ ] 🔴", "ESTÉTICA OLED & NEON RED", "Iluminação de alta profundidade com preto absoluto."),
-        Triple("🌌 🚀 [ ████████ DEEP SPACE ART ████████ ] 🌌", "AMBIENTE CÓSMICO ESTELAR", "Fundo imersivo inspirado nas galáxias e universos."),
-        Triple("⚡ 💻 [ ████████ CYBERPUNK 2077 ████████ ] ⚡", "FUTURO DISTÓPICO RED", "Linhas minimalistas em vermelho vivo e transições futuristas."),
-        Triple("🔥 🌟 [ ████████ MINIMAL GLOW ████████ ] 🔥", "FOCO TOTAL NO CONTEÚDO", "Design limpo, elegante e sem distrações visuais.")
+    // Lista apenas com as cores e tons dinâmicos que mudam de aspeto e vibram visualmente
+    private val colorThemes = listOf(
+        Pair(Color.parseColor("#FF1E56"), intArrayOf(Color.parseColor("#1a050a"), Color.parseColor("#080204"))),
+        Pair(Color.parseColor("#00E5FF"), intArrayOf(Color.parseColor("#03131a"), Color.parseColor("#010608"))),
+        Pair(Color.parseColor("#9C27B0"), intArrayOf(Color.parseColor("#14031a"), Color.parseColor("#070108"))),
+        Pair(Color.parseColor("#4CAF50"), intArrayOf(Color.parseColor("#051a08"), Color.parseColor("#020803")))
     )
 
     private var currentIndex = 0
@@ -121,43 +119,26 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel com Elemento Gráfico Dinâmico
+        // Centro: Painel Limpo com "LAUNCHER TV" e Cores Vibrantes Dinâmicas
         spotlightCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            background = createSlideBackground(0)
+            background = createVibrantBackground(0)
             setPadding(18, 18, 18, 18)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2f).apply {
                 setMargins(0, 0, 8, 0)
             }
         }
 
-        wallpaperVisualBox = TextView(this).apply {
-            text = visualSlides[0].first
-            textSize = 13f
-            setTextColor(Color.parseColor("#FF1E56"))
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
-        }
-
-        spotlightTitle = TextView(this).apply {
-            text = visualSlides[0].second
-            textSize = 14f
-            setTextColor(Color.WHITE)
+        centerLabel = TextView(this).apply {
+            text = "LAUNCHER TV"
+            textSize = 22f
+            setTextColor(colorThemes[0].first)
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
         }
-        spotlightDesc = TextView(this).apply {
-            text = visualSlides[0].third
-            textSize = 10f
-            setTextColor(Color.parseColor("#AAAAAA"))
-            gravity = Gravity.CENTER
-        }
 
-        spotlightCard.addView(wallpaperVisualBox)
-        spotlightCard.addView(spotlightTitle)
-        spotlightCard.addView(spotlightDesc)
+        spotlightCard.addView(centerLabel)
         middleBody.addView(spotlightCard)
 
         // Coluna Direita (Loja TV -> Play Store)
@@ -206,44 +187,30 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        startVisualSlideRotator()
+        startColorVibrationRotator()
     }
 
-    private fun createSlideBackground(index: Int): GradientDrawable {
-        // Cores de fundo e bordas totalmente distintas para cada slide dar impacto visual real
-        val borderColors = intArrayOf(
-            Color.parseColor("#FF1E56"),
-            Color.parseColor("#00E5FF"),
-            Color.parseColor("#9C27B0"),
-            Color.parseColor("#4CAF50")
-        )
-        val fillColors = arrayOf(
-            intArrayOf(Color.parseColor("#1a050a"), Color.parseColor("#080204")),
-            intArrayOf(Color.parseColor("#03131a"), Color.parseColor("#010608")),
-            intArrayOf(Color.parseColor("#14031a"), Color.parseColor("#070108")),
-            intArrayOf(Color.parseColor("#051a08"), Color.parseColor("#020803"))
-        )
-        return GradientDrawable(GradientDrawable.Orientation.TL_BR, fillColors[index % fillColors.size]).apply {
-            setStroke(3, borderColors[index % borderColors.size])
-            cornerRadius = 12f
+    private fun createVibrantBackground(index: Int): GradientDrawable {
+        val theme = colorThemes[index % colorThemes.size]
+        return GradientDrawable(GradientDrawable.Orientation.TL_BR, theme.second).apply {
+            setStroke(4, theme.first)
+            cornerRadius = 14f
         }
     }
 
-    private fun startVisualSlideRotator() {
+    private fun startColorVibrationRotator() {
         rotatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % visualSlides.size
-                wallpaperVisualBox.text = visualSlides[currentIndex].first
-                spotlightTitle.text = visualSlides[currentIndex].second
-                spotlightDesc.text = visualSlides[currentIndex].third
+                currentIndex = (currentIndex + 1) % colorThemes.size
+                
+                // Atualiza a cor do texto e o fundo vibrante do painel central
+                centerLabel.setTextColor(colorThemes[currentIndex].first)
+                spotlightCard.background = createVibrantBackground(currentIndex)
 
-                // Altera dinamicamente o fundo, as cores e a moldura do painel central
-                spotlightCard.background = createSlideBackground(currentIndex)
-
-                handler.postDelayed(this, 4000) // Troca visual a cada 4 segundos
+                handler.postDelayed(this, 3000) // Vibra/troca de cor a cada 3 segundos
             }
         }
-        handler.postDelayed(rotatorRunnable, 4000)
+        handler.postDelayed(rotatorRunnable, 3000)
     }
 
     override fun onDestroy() {
