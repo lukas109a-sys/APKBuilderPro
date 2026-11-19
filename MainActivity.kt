@@ -24,16 +24,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var horizontalAppsLayout: LinearLayout
     private lateinit var spotlightCard: LinearLayout
-    private lateinit var wallpaperArtText: TextView
+    private lateinit var wallpaperVisualBox: TextView
     private lateinit var spotlightTitle: TextView
     private lateinit var spotlightDesc: TextView
 
-    // Coleção de papéis de parede visuais dinâmicos (Arte abstrata, gradientes e temas OLED)
-    private val wallpaperArtList = listOf(
-        Triple("🌟 [ WALLPAPER: NEON RED & ABYSS ]", "RED TV CINEMATIC OLED", "Ecrã total com preto absoluto e moldura em vermelho vivo."),
-        Triple("🌌 [ WALLPAPER: CÓSMICO PROFUNDO ]", "DEEP SPACE AMBIENT", "Fundo escuro estelar com gradientes de alta imersão visual."),
-        Triple("⚡ [ WALLPAPER: CYBERPUNK RED ]", "FUTURISTIC RETRO", "Estética de luzes dinâmicas e design minimalista avançado."),
-        Triple("🔥 [ WALLPAPER: AURORA BOREALIS ]", "RED GLOW DYNAMICS", "Transição de tons escuros profundos com brilho lateral em LED.")
+    // Lista com elementos visuais gráficos e ícones marcantes que mudam a cada rotação
+    private val visualSlides = listOf(
+        Triple("🔴 🎬 [ ████████ RED TV CINEMATIC ████████ ] 🔴", "ESTÉTICA OLED & NEON RED", "Iluminação de alta profundidade com preto absoluto."),
+        Triple("🌌 🚀 [ ████████ DEEP SPACE ART ████████ ] 🌌", "AMBIENTE CÓSMICO ESTELAR", "Fundo imersivo inspirado nas galáxias e universos."),
+        Triple("⚡ 💻 [ ████████ CYBERPUNK 2077 ████████ ] ⚡", "FUTURO DISTÓPICO RED", "Linhas minimalistas em vermelho vivo e transições futuristas."),
+        Triple("🔥 🌟 [ ████████ MINIMAL GLOW ████████ ] 🔥", "FOCO TOTAL NO CONTEÚDO", "Design limpo, elegante e sem distrações visuais.")
     )
 
     private var currentIndex = 0
@@ -121,19 +121,19 @@ class MainActivity : AppCompatActivity() {
         leftCol.addView(createModelButton("🌐 Streaming") { Toast.makeText(this, "Streaming", Toast.LENGTH_SHORT).show() })
         middleBody.addView(leftCol)
 
-        // Centro: Painel com Papel de Parede Dinâmico e Arte Visual Rotativa
+        // Centro: Painel com Elemento Gráfico Dinâmico
         spotlightCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.BOTTOM
-            background = createWallpaperBackground(0)
+            gravity = Gravity.CENTER
+            background = createSlideBackground(0)
             setPadding(18, 18, 18, 18)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2f).apply {
                 setMargins(0, 0, 8, 0)
             }
         }
 
-        wallpaperArtText = TextView(this).apply {
-            text = wallpaperArtList[0].first
+        wallpaperVisualBox = TextView(this).apply {
+            text = visualSlides[0].first
             textSize = 13f
             setTextColor(Color.parseColor("#FF1E56"))
             typeface = Typeface.DEFAULT_BOLD
@@ -142,18 +142,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         spotlightTitle = TextView(this).apply {
-            text = wallpaperArtList[0].second
+            text = visualSlides[0].second
             textSize = 14f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
         }
         spotlightDesc = TextView(this).apply {
-            text = wallpaperArtList[0].third
+            text = visualSlides[0].third
             textSize = 10f
             setTextColor(Color.parseColor("#AAAAAA"))
+            gravity = Gravity.CENTER
         }
 
-        spotlightCard.addView(wallpaperArtText)
+        spotlightCard.addView(wallpaperVisualBox)
         spotlightCard.addView(spotlightTitle)
         spotlightCard.addView(spotlightDesc)
         middleBody.addView(spotlightCard)
@@ -204,38 +206,44 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(rootLayout)
         loadInstalledAppsAsBanners()
-        startWallpaperVisualRotator()
+        startVisualSlideRotator()
     }
 
-    // Cria fundos gráficos dinâmicos diferentes para cada papel de parede visual
-    private fun createWallpaperBackground(index: Int): GradientDrawable {
-        val colors = arrayOf(
-            intArrayOf(Color.parseColor("#140A0D"), Color.parseColor("#050505")), // Tema 1: Vermelho escuro profundo
-            intArrayOf(Color.parseColor("#091018"), Color.parseColor("#050505")), // Tema 2: Azul estelar escuro
-            intArrayOf(Color.parseColor("#180A14"), Color.parseColor("#050505")), // Tema 3: Magenta escuro cyber
-            intArrayOf(Color.parseColor("#0D140A"), Color.parseColor("#050505"))  // Tema 4: Verde escuro neon
+    private fun createSlideBackground(index: Int): GradientDrawable {
+        // Cores de fundo e bordas totalmente distintas para cada slide dar impacto visual real
+        val borderColors = intArrayOf(
+            Color.parseColor("#FF1E56"),
+            Color.parseColor("#00E5FF"),
+            Color.parseColor("#9C27B0"),
+            Color.parseColor("#4CAF50")
         )
-        return GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors[index % colors.size]).apply {
-            setStroke(2, Color.parseColor("#FF1E56"))
+        val fillColors = arrayOf(
+            intArrayOf(Color.parseColor("#1a050a"), Color.parseColor("#080204")),
+            intArrayOf(Color.parseColor("#03131a"), Color.parseColor("#010608")),
+            intArrayOf(Color.parseColor("#14031a"), Color.parseColor("#070108")),
+            intArrayOf(Color.parseColor("#051a08"), Color.parseColor("#020803"))
+        )
+        return GradientDrawable(GradientDrawable.Orientation.TL_BR, fillColors[index % fillColors.size]).apply {
+            setStroke(3, borderColors[index % borderColors.size])
             cornerRadius = 12f
         }
     }
 
-    private fun startWallpaperVisualRotator() {
+    private fun startVisualSlideRotator() {
         rotatorRunnable = object : Runnable {
             override fun run() {
-                currentIndex = (currentIndex + 1) % wallpaperArtList.size
-                wallpaperArtText.text = wallpaperArtList[currentIndex].first
-                spotlightTitle.text = wallpaperArtList[currentIndex].second
-                spotlightDesc.text = wallpaperArtList[currentIndex].third
+                currentIndex = (currentIndex + 1) % visualSlides.size
+                wallpaperVisualBox.text = visualSlides[currentIndex].first
+                spotlightTitle.text = visualSlides[currentIndex].second
+                spotlightDesc.text = visualSlides[currentIndex].third
 
-                // Altera completamente o fundo visual / papel de parede do painel central
-                spotlightCard.background = createWallpaperBackground(currentIndex)
+                // Altera dinamicamente o fundo, as cores e a moldura do painel central
+                spotlightCard.background = createSlideBackground(currentIndex)
 
-                handler.postDelayed(this, 5000) // Transição visual a cada 5 segundos
+                handler.postDelayed(this, 4000) // Troca visual a cada 4 segundos
             }
         }
-        handler.postDelayed(rotatorRunnable, 5000)
+        handler.postDelayed(rotatorRunnable, 4000)
     }
 
     override fun onDestroy() {
